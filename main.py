@@ -9,6 +9,7 @@ import sys
 import subprocess
 import time
 import paramiko
+import threading
 from copy import deepcopy
 from scp import SCPClient
 
@@ -58,6 +59,7 @@ CREATEING_HIERARCHY = False
 PARENT_ID = -99
 GLOBAL_ID = 0
 PARENT_ITEM = HashableQListWidgetItem()
+PLAYING = False
 
 
 class WindowMixin(object):
@@ -85,7 +87,7 @@ class MainWindow(QMainWindow, WindowMixin):
     def __init__(self, defaultFilename=None, defaultPrefdefClassFile=None, defaultSaveDir=None):
         super(MainWindow, self).__init__()
         self.setWindowTitle(__appname__)
-        self.init_prompt()
+        # self.init_prompt()
         # Load setting in the main thread
         self.settings = Settings()
         self.settings.load()
@@ -239,6 +241,12 @@ class MainWindow(QMainWindow, WindowMixin):
 
         openPrevImg = action(getStr('prevImg'), self.openPrevImg,
                              'a', 'prev', getStr('prevImgDetail'))
+
+        play = action(getStr('play'), self.start,
+                             'd', 'play_icon', getStr('playDetail'))
+
+        pause = action(getStr('pause'), self.pause,
+                             'a', 'pause_icon', getStr('pauseDetail'))
 
         verify = action(getStr('verifyImg'), self.verifyImg,
                         'space', 'verify', getStr('verifyImgDetail'))
@@ -420,11 +428,11 @@ class MainWindow(QMainWindow, WindowMixin):
 
         self.tools = self.toolbar('Tools')
         self.actions.beginner = (
-            retrieve_data, save, submit_label, openNextImg, openPrevImg, verify, save_format, None, create, copy, delete, None,
+            retrieve_data, save, submit_label, play, pause, verify, save_format, None, create, copy, delete, None,
             zoomIn, zoom, zoomOut, fitWindow, fitWidth)
 
         self.actions.advanced = (
-            open, opendir, changeSavedir, openNextImg, openPrevImg, save, save_format, None,
+            open, opendir, changeSavedir, play, pause, save, save_format, None,
             createMode, editMode, None,
             hideAll, showAll)
 
@@ -555,7 +563,23 @@ class MainWindow(QMainWindow, WindowMixin):
         if progress != 100:
             self.progressBar.setValue(progress)
 
-        
+    class Background_thread(QThread):
+
+        def run(self):
+            while PLAYING:
+                MainWindow.openNextImg(self)
+                time.sleep(0.06)
+
+    def start(self):
+        global PLAYING
+        PLAYING = True
+        self.new_thread = self.Background_thread()
+        self.new_thread.start()
+
+
+    def pause(self):
+        global PLAYING
+        PLAYING = False
 
     def getData(self):
         self.progressBar = QProgressBar()
@@ -1535,7 +1559,8 @@ class MainWindow(QMainWindow, WindowMixin):
                 filename = self.mImgList[currIndex + 1]
             else:
                 result = QMessageBox.information(self, 'Request Incomplete', "This action was not performed successfully because:\n\nYou've reached the end of the data set. Click submit to upload your labels", QMessageBox.Ok)
-
+                global PLAYING
+                PLAYING = False
         if filename:
             self.loadFile(filename)
 

@@ -32,6 +32,8 @@
 <file alias="delete">resources/icons/cancel.png</file>
 <file alias="add">resources/icons/add.png</file>
 <file alias="next">resources/icons/next.png</file>
+<file alias="play_icon">resources/icons/play-button.png</file>
+<file alias="pause_icon">resources/icons/pause.png</file>
 <file alias="prev">resources/icons/prev.png</file>
 <file alias="resetall">resources/icons/resetall.png</file>
 <file alias="verify">resources/icons/verify.png</file>
