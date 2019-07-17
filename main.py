@@ -242,11 +242,9 @@ class MainWindow(QMainWindow, WindowMixin):
         openPrevImg = action(getStr('prevImg'), self.openPrevImg,
                              'a', 'prev', getStr('prevImgDetail'))
 
-        play = action(getStr('play'), self.start,
+        play_pause = action(getStr('play'), self.play_pause,
                              'd', 'play_icon', getStr('playDetail'))
 
-        pause = action(getStr('pause'), self.pause,
-                             'a', 'pause_icon', getStr('pauseDetail'))
 
         verify = action(getStr('verifyImg'), self.verifyImg,
                         'space', 'verify', getStr('verifyImgDetail'))
@@ -362,7 +360,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.drawSquaresOption.triggered.connect(self.toogleDrawSquare)
 
         # Store actions for further handling.
-        self.actions = struct(save=save, save_format=save_format, saveAs=saveAs, open=open, close=close, resetAll = resetAll,
+        self.actions = struct(save=save, play_pause=play_pause, save_format=save_format, saveAs=saveAs, open=open, close=close, resetAll = resetAll,
                               lineColor=color1, create=create, delete=delete, add_part=add_part, edit=edit, copy=copy,
                               createMode=createMode, editMode=editMode, advancedMode=advancedMode,
                               shapeLineColor=shapeLineColor, shapeFillColor=shapeFillColor,
@@ -428,11 +426,11 @@ class MainWindow(QMainWindow, WindowMixin):
 
         self.tools = self.toolbar('Tools')
         self.actions.beginner = (
-            retrieve_data, save, submit_label, play, pause, verify, save_format, None, create, copy, delete, None,
+            retrieve_data, save, submit_label, openNextImg, openPrevImg, play_pause, verify, save_format, None, create, copy, delete, None,
             zoomIn, zoom, zoomOut, fitWindow, fitWidth)
 
         self.actions.advanced = (
-            open, opendir, changeSavedir, play, pause, save, save_format, None,
+            open, opendir, changeSavedir, play_pause, save, save_format, None,
             createMode, editMode, None,
             hideAll, showAll)
 
@@ -563,23 +561,33 @@ class MainWindow(QMainWindow, WindowMixin):
         if progress != 100:
             self.progressBar.setValue(progress)
 
-    class Background_thread(QThread):
 
-        def run(self):
-            while PLAYING:
-                MainWindow.openNextImg(self)
-                time.sleep(0.06)
+    def run(self):
+        while PLAYING:
+            MainWindow.openNextImg(self)
+            time.sleep(0.06)
+            qApp.processEvents()
 
     def start(self):
         global PLAYING
         PLAYING = True
-        self.new_thread = self.Background_thread()
-        self.new_thread.start()
+        self.run()
 
 
     def pause(self):
         global PLAYING
         PLAYING = False
+
+    def play_pause(self):
+        if PLAYING:
+            self.actions.play_pause.setText("Play")
+            self.actions.play_pause.setIcon(newIcon("play_icon"))
+            self.pause()
+            
+        else:
+            self.actions.play_pause.setText("Pause")
+            self.actions.play_pause.setIcon(newIcon("pause_icon"))
+            self.start()
 
     def getData(self):
         self.progressBar = QProgressBar()
@@ -890,7 +898,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
     # Tzutalin 20160906 : Add file list and dock to move faster
     def fileitemDoubleClicked(self, item=None):
-        currIndex = self.mImgList.index(ustr(item.text(0)))
+        currIndex = self.mImgList.index(ustr(item.text()))
         if currIndex < len(self.mImgList):
             filename = self.mImgList[currIndex]
             if filename:
@@ -1769,7 +1777,7 @@ def get_main_app(argv=[]):
                          'data', 'predefined_classes.txt'),
                      argv[3] if len(argv) >= 4 else None)
     
-    win.setGeometry(100, 100, 1280, 720)
+    win.setGeometry(0, 0, 1366, 768)
     win.show()
     return app, win
 

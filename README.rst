@@ -12,26 +12,11 @@ UMTRI Image Annotation Tool
     :align: center
 
 
-UMTRI Image Annotation Tool is adapted from LabelImg and is being developed and maintained by Shaun Luo. Special thanks to Tzutalin for his initial work. 
+UMTRI Video Annotation Tool is adapted from the UMTRI Image Annotation Tool and is being developed and maintained by Shaun Luo. Special thanks to Tzutalin for his initial work. 
 
-The UMTRI IAT is written in Python and uses PyQt5 for its GUI.
+The UMTRI VAT is written in Python and uses PyQt5 for its GUI.
 Annotations are saved as XML files in PASCAL VOC format, the format used
-by `ImageNet <http://www.image-net.org/>`__.  Besides, it also supports YOLO format
-
-.. image:: /demo/demo3.png
-    :align: center
-^UMTRI IAT running on Lubuntu
-
-
-.. image:: /demo/demo5.png
-    :align: center
-^UMTRI IAT running on Deepin
-
-
-.. image:: /demo/demo8.png
-    :align: center
-^UMTRI IAT running on OSX Mojave
-
+by `ImageNet <http://www.image-net.org/>`__.  Besides, it also supports YOLO format.
 
 
 ATTENTION
@@ -154,41 +139,9 @@ Changelog
 Alpha 0.1
 ~~~~~~~
 • This ReadMe page
-• logo and title bar
-• Disclaimer
-• Authentication
-• Remote file server 
-• Modern and consistent icons
-• Progress bar
-• Retrieve function
-• Auto move .zip to labeled 
-• Auto download .zip from server
-• Auto download predefined_classes
-• Auto unzip
-• Auto load folder and predefined_classes
-• Autosave when click next and Submit
-• Submit function
-• Auto compress labels into zip 
-• Auto upload labels to server 
-• Auto local clean up 
-• Added preemptive checking in case unlabeled folder is empty or server unable to connect
+• Dynamic Play/Pause button
+• Play the images as a video in the background thread
 
-Alpha 0.2
-~~~~~~~
-• New UI function, right click on label to add component 
-• Auto-format & auto-fill in pop-up dialog
-• Ordered label list -> parent on top, immediate children below 
-• Modified data structure to allow ID and parent/child relation
-• Post-processing: reflect hierarchy when outputing in pascal_voc format .XML
-• Can read hierarchy from file into program while maintaining the correct odering
-
-Alpha 0.3
-~~~~~~~
-• Moved from a list representation to a tree representation of labels
-• More intuitive hierarchy on the user interface 
-• Recursive label check
-• Recursive delete 
-• Reconstruction of tree when loading label from file
 
 Future Features
 ~~~~~~~
