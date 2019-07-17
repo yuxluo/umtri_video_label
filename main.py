@@ -564,7 +564,8 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def run(self):
         while PLAYING:
-            MainWindow.openNextImg(self)
+            self.openNextImg()
+            self.update_slider_value(self.slider.value() + 1)
             time.sleep(0.06)
             qApp.processEvents()
 
@@ -696,6 +697,9 @@ class MainWindow(QMainWindow, WindowMixin):
         os.system('rm *')
 
         result = QMessageBox.information(self, 'Request Completed', "Your labels have been submitted successfully", QMessageBox.Ok)
+
+
+        self.statusBar().removeWidget(self.slider)
 
         
 
@@ -902,9 +906,16 @@ class MainWindow(QMainWindow, WindowMixin):
         if currIndex < len(self.mImgList):
             filename = self.mImgList[currIndex]
             if filename:
-                self.loadFile(filename)
+                self.update_slider_value(currIndex)
 
     # Add chris
+
+    def load_file_by_index(self, index):
+        if index < len(self.mImgList):
+            filename = self.mImgList[index]
+            if filename:
+                self.loadFile(filename)
+
     def btnstate(self, item= None):
         """ Function to handle difficult examples
         Update on each object """
@@ -1270,6 +1281,7 @@ class MainWindow(QMainWindow, WindowMixin):
             if unicodeFilePath in self.mImgList:
                 index = self.mImgList.index(unicodeFilePath)
                 fileWidgetItem = self.fileListWidget.item(index)
+                self.fileListWidget.scrollToItem(fileWidgetItem, QAbstractItemView.PositionAtCenter)
                 fileWidgetItem.setSelected(True)
             else:
                 self.fileListWidget.clear()
@@ -1494,6 +1506,21 @@ class MainWindow(QMainWindow, WindowMixin):
         for imgPath in self.mImgList:
             item = QListWidgetItem(imgPath)
             self.fileListWidget.addItem(item)
+        self.init_slider()
+
+    def init_slider(self):
+        self.slider = QSlider(Qt.Horizontal)
+        self.slider.setRange(0, self.fileListWidget.count() - 1)
+        self.slider.valueChanged.connect(self.slider_value_changed)
+        self.statusBar().addPermanentWidget(self.slider)
+        self.statusBar().show()
+
+    def slider_value_changed(self):
+        if PLAYING == False:
+            self.load_file_by_index(self.slider.value())
+
+    def update_slider_value(self, new_value):
+        self.slider.setValue(new_value)
 
     def verifyImg(self, _value=False):
         # Proceding next image without dialog if having any label

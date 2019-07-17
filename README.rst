@@ -14,7 +14,7 @@ UMTRI Image Annotation Tool
 
 UMTRI Video Annotation Tool is adapted from the UMTRI Image Annotation Tool and is being developed and maintained by Shaun Luo. Special thanks to Tzutalin for his initial work. 
 
-The UMTRI VAT is written in Python and uses PyQt5 for its GUI.
+The UMTRI VAT is written in Python and uses PyQt5 for its GUI. It allows users to define a behavior at track the object across frames.
 Annotations are saved as XML files in PASCAL VOC format, the format used
 by `ImageNet <http://www.image-net.org/>`__.  Besides, it also supports YOLO format.
 
@@ -141,8 +141,15 @@ Alpha 0.1
 • This ReadMe page
 • Dynamic Play/Pause button
 • Play the images as a video in the background thread
+• Draggable slider to fast forward and backward 
+• Sync slider with 'Play' and double click in fileList
 
 
 Future Features
+~~~~~~~
+• ?
+
+
+Known Bugs
 ~~~~~~~
 • ?
