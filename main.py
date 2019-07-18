@@ -534,10 +534,10 @@ class MainWindow(QMainWindow, WindowMixin):
         if ok: 
             if server_info == "":
                 pass
-        else:
-            HOST = server_info.split()[0]
-            USERNAME = server_info.split()[1]
-            PASSWORD = server_info.split()[2]
+            else:
+                HOST = server_info.split()[0]
+                USERNAME = server_info.split()[1]
+                PASSWORD = server_info.split()[2]
 
 
     def addPart(self):
