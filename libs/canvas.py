@@ -22,6 +22,16 @@ CURSOR_GRAB = Qt.OpenHandCursor
 # class Canvas(QGLWidget):
 
 
+class Behavior():
+    label = ""
+    self_id = None 
+    selected = False
+    shapes = []
+
+    def __init__(self, name, behavior_id):
+        self.label = name
+        self.self_id = behavior_id
+
 class Canvas(QWidget):
     zoomRequest = pyqtSignal(int)
     scrollRequest = pyqtSignal(int, int)
@@ -38,8 +48,10 @@ class Canvas(QWidget):
         super(Canvas, self).__init__(*args, **kwargs)
         # Initialise local state.
         self.mode = self.EDIT
+        self.behaviors = []
         self.shapes = []
         self.current = None
+        self.selectedBehavior = None
         self.selectedShape = None  # save the selected shape here
         self.selectedShapeCopy = None
         self.drawingLineColor = QColor(0, 0, 255)
@@ -63,6 +75,10 @@ class Canvas(QWidget):
         self.setFocusPolicy(Qt.WheelFocus)
         self.verified = False
         self.drawSquare = False
+
+    def new_behavior(self, name, behavior_id):
+        self.behaviors.append(Behavior(name, behavior_id))
+        return self.behaviors[-1]
 
     def setDrawingColor(self, qColor):
         self.drawingLineColor = qColor
@@ -297,6 +313,14 @@ class Canvas(QWidget):
             self.current.popPoint()
             self.finalise()
 
+    def selectBehavior(self, behavior):
+        self.deSelectBehavior()
+        behavior.selected = True
+        self.selectedBehavior = behavior
+        self.setHiding()
+        self.selectionChanged.emit(True)
+        self.update()
+
     def selectShape(self, shape):
         self.deSelectShape()
         shape.selected = True
@@ -400,6 +424,14 @@ class Canvas(QWidget):
         if self.selectedShape:
             self.selectedShape.selected = False
             self.selectedShape = None
+            self.setHiding(False)
+            self.selectionChanged.emit(False)
+            self.update()
+
+    def deSelectBehavior(self):
+        if self.selectedBehavior:
+            self.selectedBehavior.selected = False
+            self.selectedBehavior = None
             self.setHiding(False)
             self.selectionChanged.emit(False)
             self.update()
@@ -675,14 +707,14 @@ class Canvas(QWidget):
         
         # Establishing relationship hierarchy
         self.shapes[-1].self_id = self_id
-        if adding_child: 
-            self.shapes[-1].parents.append(parent_id)
-            self.shapes[self.find_parent_index(parent_id)].children.append(self_id)
+        # if adding_child: 
+        #     self.shapes[-1].parents.append(parent_id)
+        #     self.shapes[self.find_parent_index(parent_id)].children.append(self_id)
 
-            for parent_index in range(len(self.shapes)):
-                if self.shapes[parent_index].self_id == parent_id:
-                    self.shapes.insert(parent_index + 1, self.shapes.pop(-1))
-                    return self.shapes[parent_index + 1]
+        #     for parent_index in range(len(self.shapes)):
+        #         if self.shapes[parent_index].self_id == parent_id:
+        #             self.shapes.insert(parent_index + 1, self.shapes.pop(-1))
+        #             return self.shapes[parent_index + 1]
 
         return self.shapes[-1]
 

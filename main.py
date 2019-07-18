@@ -130,6 +130,8 @@ class MainWindow(QMainWindow, WindowMixin):
 
         self.itemsToShapes = {}
         self.shapesToItems = {}
+        self.itemsToBehaviors = {}
+        self.behaviorsToItems = {}
         self.prevLabelText = ''
 
         listLayout = QVBoxLayout()
@@ -842,6 +844,9 @@ class MainWindow(QMainWindow, WindowMixin):
         QMessageBox.information(self, u'Information', msg)
 
     def createShape(self):
+        global CREATEING_HIERARCHY
+        CREATEING_HIERARCHY = True
+
         assert self.beginner()
         self.canvas.setEditing(False)
         self.actions.create.setEnabled(False)
@@ -962,9 +967,24 @@ class MainWindow(QMainWindow, WindowMixin):
         self.actions.shapeLineColor.setEnabled(selected)
         self.actions.shapeFillColor.setEnabled(selected)
 
+    def addBehavior(self, behavior):
+        item = HashableQListWidgetItem()
+        item.setText(0, behavior.label)
+        item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
+        item.setCheckState(0, Qt.Checked)
+        item.setBackground(0, generateColorByText(behavior.label))
+        self.itemsToBehaviors[item] = behavior
+        self.behaviorsToItems[behavior] = item
+
+        self.labelList.addTopLevelItem(item)
+        global PARENT_ITEM
+        PARENT_ITEM = item
+
+        for action in self.actions.onShapesPresent:
+            action.setEnabled(True)
+
     def addLabel(self, shape):
         shape.paintLabel = self.displayLabelOption.isChecked()
-        global CREATEING_HIERARCHY
         item = HashableQListWidgetItem()
         item.setText(0, shape.label)
         item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
@@ -973,15 +993,12 @@ class MainWindow(QMainWindow, WindowMixin):
         self.itemsToShapes[item] = shape
         self.shapesToItems[shape] = item
 
-        if CREATEING_HIERARCHY:
-            PARENT_ITEM.addChild(item)
-            PARENT_ITEM.setExpanded(True)
-        else:
-            self.labelList.addTopLevelItem(item)
-        CREATEING_HIERARCHY = False
+        PARENT_ITEM.addChild(item)
+        PARENT_ITEM.setExpanded(True)
+        self.itemsToBehaviors[PARENT_ITEM].shapes.append(shape)
 
-        for action in self.actions.onShapesPresent:
-            action.setEnabled(True)
+        # for action in self.actions.onShapesPresent:
+        #     action.setEnabled(True)
 
 
     def remLabel(self, shape):
@@ -1110,23 +1127,35 @@ class MainWindow(QMainWindow, WindowMixin):
         item = self.currentItem()
         if item and self.canvas.editing():
             self._noSelectionSlot = True
-            self.canvas.selectShape(self.itemsToShapes[item])
-            shape = self.itemsToShapes[item]
-            # Add Chris
-            self.diffcButton.setChecked(shape.difficult)
+            if item in self.itemsToShapes:
+                self.canvas.selectShape(self.itemsToShapes[item])
+            else: 
+                self.canvas.selectBehavior(self.itemsToBehaviors[item])
+
 
     def labelItemChanged(self, item):
-        shape = self.itemsToShapes[item]
-        label = item.text(0)
-        if label != shape.label:
-            shape.label = item.text(0)
-            shape.line_color = generateColorByText(shape.label)
-            self.setDirty()
-        else:  # User probably changed item visibility
-            self.canvas.setShapeVisible(shape, item.checkState(0) == Qt.Checked)
-            for i in range(item.childCount()):
-                self.recursive_change_visibility(item.child(i), item.checkState(0))
-            
+        if item in self.itemsToShapes:
+            shape = self.itemsToShapes[item]
+            label = item.text(0)
+            if label != shape.label:
+                shape.label = item.text(0)
+                self.setDirty()
+            else:  # User probably changed item visibility
+                self.canvas.setShapeVisible(shape, item.checkState(0) == Qt.Checked)
+                for i in range(item.childCount()):
+                    self.recursive_change_visibility(item.child(i), item.checkState(0))
+        
+        else:
+            behavior = self.itemsToBehaviors[item]
+            label = item.text(0)
+            if label != behavior.label:
+                behavior.label = item.text(0)
+                self.setDirty()
+            else:  # User probably changed item visibility
+                for i in range(item.childCount()):
+                    self.recursive_change_visibility(item.child(i), item.checkState(0))
+
+
     def recursive_change_visibility(self, item, parent_check_state):
         item.setCheckState(0, parent_check_state)
         shape = self.itemsToShapes[item]
@@ -1141,35 +1170,41 @@ class MainWindow(QMainWindow, WindowMixin):
         position MUST be in global coordinates.
         """
         global CREATEING_HIERARCHY
+        global GLOBAL_ID
 
-        if not self.useDefaultLabelCheckbox.isChecked() or not self.defaultLabelTextLine.text():
-            if len(self.labelHist) > 0:
-                    self.labelDialog = LabelDialog(
-                        parent=self, listItem=self.labelHist)
+        if CREATEING_HIERARCHY:
+            if not self.useDefaultLabelCheckbox.isChecked() or not self.defaultLabelTextLine.text():
+                if len(self.labelHist) > 0:
+                        self.labelDialog = LabelDialog(
+                            parent=self, listItem=self.labelHist)
 
-            # Sync single class mode from PR#106
-            if self.singleClassMode.isChecked() and self.lastLabel:
-                text = self.lastLabel
+                # Sync single class mode from PR#106
+                if self.singleClassMode.isChecked() and self.lastLabel:
+                    text = self.lastLabel
+                else:
+                        behavior_name = self.labelDialog.popUp(text=self.prevLabelText)
             else:
-                    text = self.labelDialog.popUp(text=self.prevLabelText)
-                    self.lastLabel = text
-        else:
-            text = self.defaultLabelTextLine.text()
+                text = self.defaultLabelTextLine.text()
 
+            parent_behavior = self.canvas.new_behavior(behavior_name, GLOBAL_ID)
+        
+        text = self.filePath.split('/')[-1].split('-')[-1].split('.')[0]
+        self.lastLabel = text
         # Add Chris
         self.diffcButton.setChecked(False)
         if text is not None:
             self.prevLabelText = text
             generate_color = generateColorByText(text)
 
-            global GLOBAL_ID
             global PARENT_ID
 
             shape = self.canvas.setLastLabel(text, generate_color, generate_color, GLOBAL_ID, PARENT_ID, CREATEING_HIERARCHY)
             GLOBAL_ID += 1
 
-
+            if CREATEING_HIERARCHY:
+                self.addBehavior(parent_behavior)
             self.addLabel(shape)
+
             if self.beginner():  # Switch to edit mode.
                 self.canvas.setEditing(True)
                 self.actions.create.setEnabled(True)
