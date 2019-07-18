@@ -248,7 +248,7 @@ class MainWindow(QMainWindow, WindowMixin):
                              'd', 'play_icon', getStr('playDetail'))
 
 
-        verify = action(getStr('verifyImg'), self.verifyImg,
+        verify = action(getStr('verifyImg'), self.asd,
                         'space', 'verify', getStr('verifyImgDetail'))
 
         save = action(getStr('save'), self.saveFile,
@@ -566,6 +566,11 @@ class MainWindow(QMainWindow, WindowMixin):
         if progress != 100:
             self.progressBar.setValue(progress)
 
+    def continuous_add(self):
+        # while CREATEING_HIERARCHY:
+        #     self.createShape()
+            # self.openNextImg()
+        return
 
     def run(self):
         while PLAYING:
@@ -851,6 +856,15 @@ class MainWindow(QMainWindow, WindowMixin):
         self.canvas.setEditing(False)
         self.actions.create.setEnabled(False)
 
+    def asd(self):
+        self.openNextImg()
+        self.old_create_shape()
+
+    def old_create_shape(self):
+        assert self.beginner()
+        self.canvas.setEditing(False)
+        self.actions.create.setEnabled(False)
+
     def toggleDrawingSensitive(self, drawing=True):
         """In the middle of drawing, toggling between modes should be disabled."""
         self.actions.editMode.setEnabled(not drawing)
@@ -972,13 +986,16 @@ class MainWindow(QMainWindow, WindowMixin):
         item.setText(0, behavior.label)
         item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
         item.setCheckState(0, Qt.Checked)
-        item.setBackground(0, generateColorByText(behavior.label))
+        behavior.color = generateColorByText(behavior.label)
+        item.setBackground(0, behavior.color)
         self.itemsToBehaviors[item] = behavior
         self.behaviorsToItems[behavior] = item
 
         self.labelList.addTopLevelItem(item)
         global PARENT_ITEM
         PARENT_ITEM = item
+        global CREATEING_HIERARCHY
+        CREATEING_HIERARCHY = False
 
         for action in self.actions.onShapesPresent:
             action.setEnabled(True)
@@ -989,7 +1006,7 @@ class MainWindow(QMainWindow, WindowMixin):
         item.setText(0, shape.label)
         item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
         item.setCheckState(0, Qt.Checked)
-        item.setBackground(0, generateColorByText(shape.label))
+        item.setBackground(0, PARENT_ITEM.background(0))
         self.itemsToShapes[item] = shape
         self.shapesToItems[shape] = item
 
@@ -1187,6 +1204,8 @@ class MainWindow(QMainWindow, WindowMixin):
                 text = self.defaultLabelTextLine.text()
 
             parent_behavior = self.canvas.new_behavior(behavior_name, GLOBAL_ID)
+            self.addBehavior(parent_behavior)
+
         
         text = self.filePath.split('/')[-1].split('-')[-1].split('.')[0]
         self.lastLabel = text
@@ -1194,15 +1213,13 @@ class MainWindow(QMainWindow, WindowMixin):
         self.diffcButton.setChecked(False)
         if text is not None:
             self.prevLabelText = text
-            generate_color = generateColorByText(text)
+            generate_color = self.itemsToBehaviors[PARENT_ITEM].color
 
             global PARENT_ID
 
             shape = self.canvas.setLastLabel(text, generate_color, generate_color, GLOBAL_ID, PARENT_ID, CREATEING_HIERARCHY)
             GLOBAL_ID += 1
 
-            if CREATEING_HIERARCHY:
-                self.addBehavior(parent_behavior)
             self.addLabel(shape)
 
             if self.beginner():  # Switch to edit mode.
@@ -1217,6 +1234,8 @@ class MainWindow(QMainWindow, WindowMixin):
         else:
             # self.canvas.undoLastLine()
             self.canvas.resetAllLines()
+
+        # self.continuous_add()
 
     def scrollRequest(self, delta, orientation):
         units = - delta / (8 * 15)
@@ -1302,7 +1321,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def loadFile(self, filePath=None):
         """Load the specified file, or the last opened file if None."""
-        self.resetState()
+        # self.resetState()
         self.canvas.setEnabled(False)
         if filePath is None:
             filePath = self.settings.get(SETTING_FILENAME)

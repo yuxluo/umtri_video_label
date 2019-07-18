@@ -27,6 +27,7 @@ class Behavior():
     self_id = None 
     selected = False
     shapes = []
+    parent_color = None
 
     def __init__(self, name, behavior_id):
         self.label = name
