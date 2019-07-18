@@ -535,6 +535,9 @@ class MainWindow(QMainWindow, WindowMixin):
             if server_info == "":
                 pass
             else:
+                global HOST
+                global USERNAME
+                global PASSWORD
                 HOST = server_info.split()[0]
                 USERNAME = server_info.split()[1]
                 PASSWORD = server_info.split()[2]
