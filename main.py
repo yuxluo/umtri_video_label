@@ -228,7 +228,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
         retrieve_data = action(getStr('getData'), self.getData, 'Ctrl+r', 'download', getStr('retrieveDetail'))
 
-        set_sleep_time = action(getStr('setSleep'), self.adjust_sleep_time, 'Ctrl+M', 'clock', getStr('setSleepDetail'))
+        set_sleep_time = action(getStr('setSleep'), self.adjust_sleep_time, 'Ctrl+p', 'clock', getStr('setSleepDetail'))
 
         submit_label = action(getStr('submitLabel'), self.submitLabel, 'Ctrl+M', 'upload', getStr('submitDetail'))
 
@@ -246,6 +246,12 @@ class MainWindow(QMainWindow, WindowMixin):
 
         openPrevImg = action(getStr('prevImg'), self.openPrevImg,
                              'a', 'prev', getStr('prevImgDetail'))
+
+        openNext10Img = action(getStr('nextImg'), self.openNextImg,
+                             'Ctrl+d', 'next', getStr('nextImgDetail'))
+
+        openPrev10Img = action(getStr('prevImg'), self.openPrevImg,
+                             'Ctrl+a', 'prev', getStr('prevImgDetail'))
 
         play_pause = action(getStr('play'), self.play_pause,
                              'd', 'play_icon', getStr('playDetail'))
@@ -432,7 +438,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
         self.tools = self.toolbar('Tools')
         self.actions.beginner = (
-            retrieve_data, save, submit_label, openNextImg, openPrevImg, play_pause, verify, save_format, None, create, copy, delete, None,
+            retrieve_data, save, submit_label, openNextImg, openPrevImg, play_pause, set_sleep_time, save_format, None, create, copy, delete, None,
             zoomIn, zoom, zoomOut, fitWindow, fitWidth)
 
         self.actions.advanced = (
@@ -746,7 +752,13 @@ class MainWindow(QMainWindow, WindowMixin):
 
         # remove all images from the folder
         data_folder_path = self.lu_jing
-        os.chdir(data_folder_path + self.wen_jian_min)
+        try:
+            if self.wen_jian_min == None:
+                self.wen_jian_min = self.filePath.split('/')[-2]
+            os.chdir(data_folder_path + self.wen_jian_min)
+        except:
+            return
+        os.system('pwd')
         os.system('rm *.jpeg')
         os.system('rm *.jpg')
         os.system('rm *.png')
@@ -1693,6 +1705,30 @@ class MainWindow(QMainWindow, WindowMixin):
             if filename:
                 self.loadFile(filename)
 
+    def openPrev10Img(self, _value=False):
+        # Proceding prev image without dialog if having any label
+        if self.autoSaving.isChecked():
+            if self.defaultSaveDir is not None:
+                if self.dirty is True:
+                    self.saveFile()
+            else:
+                self.changeSavedirDialog()
+                return
+
+        if not self.mayContinue():
+            return
+
+        if len(self.mImgList) <= 0:
+            return
+
+        if self.filePath is None:
+            return
+
+        currIndex = self.mImgList.index(self.filePath)
+        if currIndex - 10 >= 0:
+            filename = self.mImgList[currIndex - 10]
+            if filename:
+                self.loadFile(filename)
 
     def force_save(self, _value=False):
         imgFileDir = os.path.dirname(self.filePath)
@@ -1700,6 +1736,30 @@ class MainWindow(QMainWindow, WindowMixin):
         savedFileName = os.path.splitext(imgFileName)[0]
         savedPath = os.path.join(imgFileDir, savedFileName)
         self._saveFile(savedPath)
+
+    def openNext10Img(self, _value=False):
+
+        if self.dirty is True:
+            self.force_save()
+
+        if not self.mayContinue():
+            return
+
+        if len(self.mImgList) <= 0:
+            return
+
+        filename = None
+        if self.filePath is None:
+            filename = self.mImgList[0]
+        else:
+            currIndex = self.mImgList.index(self.filePath)
+            if currIndex + 10 < len(self.mImgList):
+                filename = self.mImgList[currIndex + 10]
+            else:
+                result = QMessageBox.information(self, 'Request Incomplete', "This action was not performed successfully because:\n\nYou've reached the end of the data set. Click submit to upload your labels", QMessageBox.Ok)
+        if filename:
+            self.loadFile(filename)
+
 
 
     def openNextImg(self, _value=False):
