@@ -60,6 +60,7 @@ PARENT_ID = -99
 GLOBAL_ID = 0
 PARENT_ITEM = HashableQListWidgetItem()
 PLAYING = False
+SLEEP_TIME = 0.06
 
 
 class WindowMixin(object):
@@ -226,6 +227,8 @@ class MainWindow(QMainWindow, WindowMixin):
                       'Ctrl+O', 'open', getStr('openFileDetail'))
 
         retrieve_data = action(getStr('getData'), self.getData, 'Ctrl+r', 'download', getStr('retrieveDetail'))
+
+        set_sleep_time = action(getStr('setSleep'), self.adjust_sleep_time, 'Ctrl+M', 'clock', getStr('setSleepDetail'))
 
         submit_label = action(getStr('submitLabel'), self.submitLabel, 'Ctrl+M', 'upload', getStr('submitDetail'))
 
@@ -410,6 +413,7 @@ class MainWindow(QMainWindow, WindowMixin):
                    (open, opendir, changeSavedir, openAnnotation, self.menus.recentFiles, save, save_format, saveAs, close, resetAll, quit))
         addActions(self.menus.help, (help, showInfo))
         addActions(self.menus.view, (
+            set_sleep_time,
             self.autoSaving,
             self.singleClassMode,
             self.displayLabelOption,
@@ -576,8 +580,75 @@ class MainWindow(QMainWindow, WindowMixin):
         while PLAYING:
             self.openNextImg()
             self.update_slider_value(self.slider.value() + 1)
-            time.sleep(0.06)
+            time.sleep(SLEEP_TIME)
             qApp.processEvents()
+
+    def adjust_sleep_time(self):
+        global SLEEP_TIME
+        dialogue = QDialog()
+
+        b1 = QPushButton("0.25x",dialogue)
+        b1.move(20,0)
+        b2 = QPushButton("0.5x",dialogue)
+        b2.move(120,0)
+        b3 = QPushButton("1.0x",dialogue)
+        b3.move(20,30)
+        b4 = QPushButton("1.5x",dialogue)
+        b4.move(120,30)
+        b5 = QPushButton("2x",dialogue)
+        b5.move(20,60)
+        b6 = QPushButton("4x",dialogue)
+        b6.move(120,60)
+
+        buttons = [b1,b2,b3,b4,b5,b6]
+        speeds = [0.06/0.25, 0.06/0.5, 0.06, 0.06/1.5, 0.06/2, 0.06/4]
+
+        for i in range(len(buttons)):
+            if SLEEP_TIME == speeds[i]:
+                buttons[i].setDefault(True)
+                break
+
+        def b1_clicked(self):
+            global SLEEP_TIME
+            SLEEP_TIME = 0.06/0.25
+            dialogue.done(0)
+
+        def b2_clicked(self):
+            global SLEEP_TIME
+            SLEEP_TIME = 0.06/0.5
+            dialogue.done(0)
+
+        def b3_clicked(self):
+            global SLEEP_TIME
+            SLEEP_TIME = 0.06
+            dialogue.done(0)
+
+        def b4_clicked(self):
+            global SLEEP_TIME
+            SLEEP_TIME = 0.06/1.5
+            dialogue.done(0)
+
+        def b5_clicked(self):
+            global SLEEP_TIME
+            SLEEP_TIME = 0.06/2
+            dialogue.done(0)
+
+        def b6_clicked(self):
+            global SLEEP_TIME
+            SLEEP_TIME = 0.06/4
+            dialogue.done(0)
+
+
+        b1.clicked.connect(b1_clicked)
+        b2.clicked.connect(b2_clicked)
+        b3.clicked.connect(b3_clicked)
+        b4.clicked.connect(b4_clicked)
+        b5.clicked.connect(b5_clicked)
+        b6.clicked.connect(b6_clicked)
+
+        dialogue.setWindowTitle("Set Speed")
+        dialogue.setWindowModality(Qt.ApplicationModal)
+        dialogue.exec_()
 
     def start(self):
         global PLAYING
