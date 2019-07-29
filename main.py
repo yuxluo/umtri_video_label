@@ -247,11 +247,11 @@ class MainWindow(QMainWindow, WindowMixin):
         openPrevImg = action(getStr('prevImg'), self.openPrevImg,
                              'a', 'prev', getStr('prevImgDetail'))
 
-        openNext10Img = action(getStr('nextImg'), self.openNext10Img,
-                             'right', 'next', getStr('nextImgDetail'))
+        openNext10Img = action(getStr('openNext10'), self.openNext10Img,
+                             'right', 'next', getStr('openNext10'))
 
-        openPrev10Img = action(getStr('prevImg'), self.openPrev10Img,
-                             'left', 'prev', getStr('prevImgDetail'))
+        openPrev10Img = action(getStr('openPrev10'), self.openPrev10Img,
+                             'left', 'prev', getStr('openPrev10'))
 
         play_pause = action(getStr('play'), self.play_pause,
                              'space', 'play_icon', getStr('playDetail'))
