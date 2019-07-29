@@ -247,18 +247,18 @@ class MainWindow(QMainWindow, WindowMixin):
         openPrevImg = action(getStr('prevImg'), self.openPrevImg,
                              'a', 'prev', getStr('prevImgDetail'))
 
-        openNext10Img = action(getStr('nextImg'), self.openNextImg,
-                             'Ctrl+d', 'next', getStr('nextImgDetail'))
+        openNext10Img = action(getStr('nextImg'), self.openNext10Img,
+                             'right', 'next', getStr('nextImgDetail'))
 
-        openPrev10Img = action(getStr('prevImg'), self.openPrevImg,
-                             'Ctrl+a', 'prev', getStr('prevImgDetail'))
+        openPrev10Img = action(getStr('prevImg'), self.openPrev10Img,
+                             'left', 'prev', getStr('prevImgDetail'))
 
         play_pause = action(getStr('play'), self.play_pause,
-                             'd', 'play_icon', getStr('playDetail'))
+                             'space', 'play_icon', getStr('playDetail'))
 
 
-        verify = action(getStr('verifyImg'), self.asd,
-                        'space', 'verify', getStr('verifyImgDetail'))
+        # verify = action(getStr('verifyImg'), self.asd,
+        #                 'space', 'verify', getStr('verifyImgDetail'))
 
         save = action(getStr('save'), self.saveFile,
                       'Ctrl+s', 'save', getStr('saveDetail'), enabled=False)
@@ -420,6 +420,8 @@ class MainWindow(QMainWindow, WindowMixin):
         addActions(self.menus.help, (help, showInfo))
         addActions(self.menus.view, (
             set_sleep_time,
+            openNext10Img,
+            openPrev10Img,
             self.autoSaving,
             self.singleClassMode,
             self.displayLabelOption,
@@ -758,7 +760,6 @@ class MainWindow(QMainWindow, WindowMixin):
             os.chdir(data_folder_path + self.wen_jian_min)
         except:
             return
-        os.system('pwd')
         os.system('rm *.jpeg')
         os.system('rm *.jpg')
         os.system('rm *.png')
@@ -1682,13 +1683,8 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def openPrevImg(self, _value=False):
         # Proceding prev image without dialog if having any label
-        if self.autoSaving.isChecked():
-            if self.defaultSaveDir is not None:
-                if self.dirty is True:
-                    self.saveFile()
-            else:
-                self.changeSavedirDialog()
-                return
+        if self.dirty is True:
+                self.force_save()
 
         if not self.mayContinue():
             return
@@ -1707,13 +1703,8 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def openPrev10Img(self, _value=False):
         # Proceding prev image without dialog if having any label
-        if self.autoSaving.isChecked():
-            if self.defaultSaveDir is not None:
-                if self.dirty is True:
-                    self.saveFile()
-            else:
-                self.changeSavedirDialog()
-                return
+        if self.dirty is True:
+                self.force_save()
 
         if not self.mayContinue():
             return
