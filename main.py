@@ -225,6 +225,8 @@ class MainWindow(QMainWindow, WindowMixin):
         self.canvas.selectionChanged.connect(self.shapeSelectionChanged)
         self.canvas.drawingPolygon.connect(self.toggleDrawingSensitive)
 
+        self.bookmarkListWidget.itemSelectionChanged.connect(self.bookmarkSelectionChanged)
+
         self.setCentralWidget(scroll)
         self.addDockWidget(Qt.RightDockWidgetArea, self.dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.filedock)
@@ -305,6 +307,8 @@ class MainWindow(QMainWindow, WindowMixin):
                         'w', 'new', getStr('crtBoxDetail'), enabled=False)
         delete = action(getStr('delBox'), self.deleteSelectedShape,
                         'Delete', 'delete', getStr('delBoxDetail'), enabled=False)
+        delete_bookmark = action('Delete Bookmark', self.deleteBookmark,
+                        'Delete', 'delete', 'Remove This Bookmark', enabled=False)              
         copy = action(getStr('dupBox'), self.copySelectedShape,
                       'Ctrl+D', 'copy', getStr('dupBoxDetail'),
                       enabled=False)
@@ -354,6 +358,8 @@ class MainWindow(QMainWindow, WindowMixin):
             self.MANUAL_ZOOM: lambda: 1,
         }
 
+        edit_bookmark = action('Edit Bookmark', self.editBookmark, 'Ctrl+E', 'edit', 'Change the name of bookmark', enabled=False)
+
         edit = action(getStr('editLabel'), self.editLabel,
                       'Ctrl+E', 'edit', getStr('editLabelDetail'),
                       enabled=False)
@@ -381,7 +387,7 @@ class MainWindow(QMainWindow, WindowMixin):
         addActions(labelMenu, (edit, delete, add_part))
 
         bookmarkMenu = QMenu()
-        addActions(bookmarkMenu, (edit, delete))
+        addActions(bookmarkMenu, (edit_bookmark, delete_bookmark))
 
 
         self.labelList.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -401,8 +407,8 @@ class MainWindow(QMainWindow, WindowMixin):
 
         # Store actions for further handling.
         self.actions = struct(save=save, play_pause=play_pause, save_format=save_format, saveAs=saveAs, open=open, close=close, resetAll = resetAll,
-                              lineColor=color1, create=create, delete=delete, add_part=add_part, edit=edit, copy=copy,
-                              createMode=createMode, editMode=editMode, advancedMode=advancedMode,
+                              lineColor=color1, create=create, delete=delete, add_part=add_part, edit=edit, copy=copy, edit_bookmark=edit_bookmark,
+                              createMode=createMode, editMode=editMode, advancedMode=advancedMode, delete_bookmark=delete_bookmark,
                               shapeLineColor=shapeLineColor, shapeFillColor=shapeFillColor,
                               zoom=zoom, zoomIn=zoomIn, zoomOut=zoomOut, zoomOrg=zoomOrg,
                               fitWindow=fitWindow, fitWidth=fitWidth,
@@ -710,14 +716,16 @@ class MainWindow(QMainWindow, WindowMixin):
             self.start()
 
     def add_to_bookmark(self):
-        print('BookMark Clicked ')
-
         if self.filePath is not None:
             frame_num = self.filePath.split('/')[-1].split('-')[-1].split('.')[0]
         else:
             return 
 
         bookmark_name = self.labelDialog.popUp(text=frame_num)
+
+        if bookmark_name == "" or bookmark_name == None:
+            return 
+
         if bookmark_name not in self.labelHist:
             self.labelHist.append(bookmark_name)
 
@@ -1058,6 +1066,20 @@ class MainWindow(QMainWindow, WindowMixin):
             item.setBackground(0, generateColorByText(text))
             self.setDirty()
 
+
+    def editBookmark(self):
+        item = self.bookmarkListWidget.selectedItems()[0]
+        new_name = self.labelDialog.popUp(text=item.text())
+        if new_name == "" or new_name == None:
+            return
+        item.setText(new_name)
+        
+    def deleteBookmark(self):
+        item = self.bookmarkListWidget.selectedItems()[0]
+        if item in self.bookmark_to_filepath:
+            del self.bookmark_to_filepath[item]
+        self.bookmarkListWidget.takeItem(self.bookmarkListWidget.row(item))
+
     # Tzutalin 20160906 : Add file list and dock to move faster
     def fileitemDoubleClicked(self, item=None):
         currIndex = self.mImgList.index(ustr(item.text()))
@@ -1068,11 +1090,11 @@ class MainWindow(QMainWindow, WindowMixin):
 
     # Add chris
 
-    def bookmarkitemDoubleClicked(self, item=None):
-        #TODO implement this shit 
+    def bookmarkitemDoubleClicked(self):
+        item = self.bookmarkListWidget.selectedItems()[0]
         if item is not None:
-            print(item.text())
-        return
+            currIndex = self.mImgList.index(ustr(self.bookmark_to_filepath[item]))
+            self.update_slider_value(currIndex)
 
     def load_file_by_index(self, index):
         if index < len(self.mImgList):
@@ -1122,6 +1144,18 @@ class MainWindow(QMainWindow, WindowMixin):
         self.actions.edit.setEnabled(selected)
         self.actions.shapeLineColor.setEnabled(selected)
         self.actions.shapeFillColor.setEnabled(selected)
+
+    def bookmarkSelectionChanged(self):
+        if len(self.bookmarkListWidget.selectedItems()) == 0:
+            self.actions.edit_bookmark.setEnabled(False)
+            self.actions.delete_bookmark.setEnabled(False)
+        elif len(self.bookmarkListWidget.selectedItems()) > 1:
+            QMessageBox.information(self, 'Tell me how you triggered this', "親，一次只能更改一個書籤喔", QMessageBox.Ok)
+            self.actions.edit_bookmark.setEnabled(False)
+            self.actions.delete_bookmark.setEnabled(False)
+        else:
+            self.actions.edit_bookmark.setEnabled(True)
+            self.actions.delete_bookmark.setEnabled(True)
 
     def addBehavior(self, behavior):
         item = HashableQListWidgetItem()
