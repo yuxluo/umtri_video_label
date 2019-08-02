@@ -26,3 +26,11 @@ class HashableQListWidgetItem(QTreeWidgetItem):
 
     def __hash__(self):
         return hash(id(self))
+
+class HashableQListtWidgetItem(QListWidgetItem):
+
+    def __init__(self, *args):
+        super(HashableQListtWidgetItem, self).__init__(*args)
+
+    def __hash__(self):
+        return hash(id(self))

@@ -49,7 +49,9 @@ from libs.yolo_io import YoloReader
 from libs.yolo_io import TXT_EXT
 from libs.ustr import ustr
 from libs.hashableQListWidgetItem import HashableQListWidgetItem
-from libs.hashableQTreeWidgetItem import hashableQTreeWidgetItem
+from libs.hashableQListWidgetItem import HashableQListtWidgetItem
+
+# from libs.hashableQTreeWidgetItem import hashableQTreeWidgetItem
 
 __appname__ = 'UMTRI Image Annotation Tool'
 HOST = 'umtri.org'
@@ -131,6 +133,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
         self.itemsToShapes = {}
         self.shapesToItems = {}
+        self.bookmark_to_filepath = {}
         self.itemsToBehaviors = {}
         self.behaviorsToItems = {}
         self.prevLabelText = ''
@@ -156,9 +159,9 @@ class MainWindow(QMainWindow, WindowMixin):
         self.editButton.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
 
         # Add some of widgets to listLayout
-        listLayout.addWidget(self.editButton)
-        listLayout.addWidget(self.diffcButton)
-        listLayout.addWidget(useDefaultLabelContainer)
+        # listLayout.addWidget(self.editButton)
+        # listLayout.addWidget(self.diffcButton)
+        # listLayout.addWidget(useDefaultLabelContainer)
 
         # Create and add a widget for showing current label items
         # self.labelList = QListWidget()
@@ -176,6 +179,18 @@ class MainWindow(QMainWindow, WindowMixin):
         self.dock = QDockWidget(getStr('boxLabelText'), self)
         self.dock.setObjectName(getStr('labels'))
         self.dock.setWidget(labelListContainer)
+
+        # Bookmark stuff
+        self.bookmarkListWidget = QListWidget()
+        self.bookmarkListWidget.itemDoubleClicked.connect(self.bookmarkitemDoubleClicked)
+        bookmark_layout = QVBoxLayout()
+        bookmark_layout.setContentsMargins(0, 0, 0, 0)
+        bookmark_layout.addWidget(self.bookmarkListWidget)
+        bookmark_container = QWidget()
+        bookmark_container.setLayout(bookmark_layout)
+        self.bookmark_dock = QDockWidget('Bookmarks', self)
+        self.bookmark_dock.setObjectName('Bookmark Widget')
+        self.bookmark_dock.setWidget(bookmark_container)
 
         self.fileListWidget = QListWidget()
         self.fileListWidget.itemDoubleClicked.connect(self.fileitemDoubleClicked)
@@ -213,10 +228,13 @@ class MainWindow(QMainWindow, WindowMixin):
         self.setCentralWidget(scroll)
         self.addDockWidget(Qt.RightDockWidgetArea, self.dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.filedock)
-        self.filedock.setFeatures(QDockWidget.DockWidgetFloatable)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.bookmark_dock)
+        self.dock.setFeatures(QDockWidget.NoDockWidgetFeatures)
+        self.filedock.setFeatures(QDockWidget.NoDockWidgetFeatures)
+        self.bookmark_dock.setFeatures(QDockWidget.NoDockWidgetFeatures)
 
-        self.dockFeatures = QDockWidget.DockWidgetClosable | QDockWidget.DockWidgetFloatable
-        self.dock.setFeatures(self.dock.features() ^ self.dockFeatures)
+        # self.dockFeatures = QDockWidget.DockWidgetClosable | QDockWidget.DockWidgetFloatable
+        # self.dock.setFeatures(self.dock.features() ^ self.dockFeatures)
 
         # Actions
         action = partial(newAction, self)
@@ -227,6 +245,8 @@ class MainWindow(QMainWindow, WindowMixin):
                       'Ctrl+O', 'open', getStr('openFileDetail'))
 
         retrieve_data = action(getStr('getData'), self.getData, 'Ctrl+r', 'download', getStr('retrieveDetail'))
+
+        bookmark = action(getStr('bookmark'), self.add_to_bookmark, 'b', 'bookmark', getStr('bookmarkDetail'))
 
         set_sleep_time = action(getStr('setSleep'), self.adjust_sleep_time, 'Ctrl+p', 'clock', getStr('setSleepDetail'))
 
@@ -359,9 +379,18 @@ class MainWindow(QMainWindow, WindowMixin):
         # Lavel list context menu.
         labelMenu = QMenu()
         addActions(labelMenu, (edit, delete, add_part))
+
+        bookmarkMenu = QMenu()
+        addActions(bookmarkMenu, (edit, delete))
+
+
         self.labelList.setContextMenuPolicy(Qt.CustomContextMenu)
         self.labelList.customContextMenuRequested.connect(
             self.popLabelListMenu)
+
+        self.bookmarkListWidget.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.bookmarkListWidget.customContextMenuRequested.connect(
+            self.popBookmarkListMenu)
 
         # Draw squares/rectangles
         self.drawSquaresOption = QAction('Draw Squares', self)
@@ -396,7 +425,8 @@ class MainWindow(QMainWindow, WindowMixin):
             view=self.menu('&View'),
             help=self.menu('&Help'),
             recentFiles=QMenu('Open &Recent'),
-            labelList=labelMenu)
+            labelList=labelMenu,
+            bookmarkListWidget=bookmarkMenu)
 
         # Auto saving : Enable auto saving if pressing next
         self.autoSaving = QAction(getStr('autoSaveMode'), self)
@@ -440,7 +470,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
         self.tools = self.toolbar('Tools')
         self.actions.beginner = (
-            retrieve_data, save, submit_label, openNextImg, openPrevImg, play_pause, set_sleep_time, save_format, None, create, copy, delete, None,
+            retrieve_data, save, submit_label, openNextImg, openPrevImg, play_pause, set_sleep_time, bookmark, save_format, None, create, copy, delete, None,
             zoomIn, zoom, zoomOut, fitWindow, fitWidth)
 
         self.actions.advanced = (
@@ -678,6 +708,25 @@ class MainWindow(QMainWindow, WindowMixin):
             self.actions.play_pause.setText("Pause")
             self.actions.play_pause.setIcon(newIcon("pause_icon"))
             self.start()
+
+    def add_to_bookmark(self):
+        print('BookMark Clicked ')
+
+        if self.filePath is not None:
+            frame_num = self.filePath.split('/')[-1].split('-')[-1].split('.')[0]
+        else:
+            return 
+
+        bookmark_name = self.labelDialog.popUp(text=frame_num)
+        if bookmark_name not in self.labelHist:
+            self.labelHist.append(bookmark_name)
+
+        item = HashableQListtWidgetItem()
+        item.setText(bookmark_name)
+        self.bookmarkListWidget.addItem(item)
+        self.bookmark_to_filepath[item] = self.filePath
+
+
 
     def getData(self):
         self.progressBar = QProgressBar()
@@ -994,6 +1043,9 @@ class MainWindow(QMainWindow, WindowMixin):
     def popLabelListMenu(self, point):
         self.menus.labelList.exec_(self.labelList.mapToGlobal(point))
 
+    def popBookmarkListMenu(self, point):
+        self.menus.bookmarkListWidget.exec_(self.bookmarkListWidget.mapToGlobal(point))
+
     def editLabel(self):
         if not self.canvas.editing():
             return
@@ -1015,6 +1067,12 @@ class MainWindow(QMainWindow, WindowMixin):
                 self.update_slider_value(currIndex)
 
     # Add chris
+
+    def bookmarkitemDoubleClicked(self, item=None):
+        #TODO implement this shit 
+        if item is not None:
+            print(item.text())
+        return
 
     def load_file_by_index(self, index):
         if index < len(self.mImgList):
@@ -1983,8 +2041,8 @@ def get_main_app(argv=[]):
                          'data', 'predefined_classes.txt'),
                      argv[3] if len(argv) >= 4 else None)
     
-    win.setGeometry(0, 0, 1366, 768)
-    win.show()
+    # win.setGeometry(0, 0, 1366, 768)
+    win.showMaximized()
     return app, win
 
 
