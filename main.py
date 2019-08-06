@@ -62,7 +62,8 @@ PARENT_ID = -99
 GLOBAL_ID = 0
 PARENT_ITEM = HashableQListWidgetItem()
 PLAYING = False
-SLEEP_TIME = 0.06
+SLEEP_TIME = 0.05
+CREATE_MODE = 1
 
 
 class WindowMixin(object):
@@ -166,7 +167,8 @@ class MainWindow(QMainWindow, WindowMixin):
         # Create and add a widget for showing current label items
         # self.labelList = QListWidget()
         self.labelList = QTreeWidget()
-        self.labelList.setHeaderLabel('Labels')
+        self.labelList.setColumnCount(3)
+        self.labelList.setHeaderLabels(['Name', 'Start', 'End'])
         labelListContainer = QWidget()
         labelListContainer.setLayout(listLayout)
         self.labelList.itemActivated.connect(self.labelSelectionChanged)
@@ -303,8 +305,12 @@ class MainWindow(QMainWindow, WindowMixin):
         editMode = action('&Edit\nRectBox', self.setEditMode,
                           'Ctrl+J', 'edit', u'Move and edit Boxs', enabled=False)
 
-        create = action(getStr('crtBox'), self.createShape,
+        create = action('New Behavior', self.addBehavior,
                         'w', 'new', getStr('crtBoxDetail'), enabled=False)
+
+        switch = action('Switch Mode', self.switch_mode,
+                        'w', 'switch', 'Switch the Creation Mode', enabled=False)
+
         delete = action(getStr('delBox'), self.deleteSelectedShape,
                         'Delete', 'delete', getStr('delBoxDetail'), enabled=False)
         delete_bookmark = action('Delete Bookmark', self.deleteBookmark,
@@ -409,7 +415,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.actions = struct(save=save, play_pause=play_pause, save_format=save_format, saveAs=saveAs, open=open, close=close, resetAll = resetAll,
                               lineColor=color1, create=create, delete=delete, add_part=add_part, edit=edit, copy=copy, edit_bookmark=edit_bookmark,
                               createMode=createMode, editMode=editMode, advancedMode=advancedMode, delete_bookmark=delete_bookmark,
-                              shapeLineColor=shapeLineColor, shapeFillColor=shapeFillColor,
+                              shapeLineColor=shapeLineColor, shapeFillColor=shapeFillColor, switch=switch,
                               zoom=zoom, zoomIn=zoomIn, zoomOut=zoomOut, zoomOrg=zoomOrg,
                               fitWindow=fitWindow, fitWidth=fitWidth,
                               zoomActions=zoomActions,
@@ -476,8 +482,10 @@ class MainWindow(QMainWindow, WindowMixin):
 
         self.tools = self.toolbar('Tools')
         self.actions.beginner = (
-            retrieve_data, save, submit_label, openNextImg, openPrevImg, play_pause, set_sleep_time, bookmark, save_format, None, create, copy, delete, None,
+            retrieve_data, save, submit_label, openNextImg, openPrevImg, play_pause, set_sleep_time, bookmark, save_format, None, create, switch, delete, None,
             zoomIn, zoom, zoomOut, fitWindow, fitWidth)
+
+        self.actions.switch.setEnabled(True)
 
         self.actions.advanced = (
             open, opendir, changeSavedir, play_pause, save, save_format, None,
@@ -627,6 +635,9 @@ class MainWindow(QMainWindow, WindowMixin):
             time.sleep(SLEEP_TIME)
             qApp.processEvents()
 
+    def switch_mode(self):
+        print("switch mode clicked")
+
     def adjust_sleep_time(self):
         global SLEEP_TIME
         dialogue = QDialog()
@@ -637,15 +648,15 @@ class MainWindow(QMainWindow, WindowMixin):
         b2.move(120,0)
         b3 = QPushButton("1.0x",dialogue)
         b3.move(20,30)
-        b4 = QPushButton("1.5x",dialogue)
+        b4 = QPushButton("2.0x",dialogue)
         b4.move(120,30)
-        b5 = QPushButton("2x",dialogue)
+        b5 = QPushButton("4.0x",dialogue)
         b5.move(20,60)
-        b6 = QPushButton("4x",dialogue)
+        b6 = QPushButton("8.0x",dialogue)
         b6.move(120,60)
 
         buttons = [b1,b2,b3,b4,b5,b6]
-        speeds = [0.06/0.25, 0.06/0.5, 0.06, 0.06/1.5, 0.06/2, 0.06/4]
+        speeds = [0.05/0.25, 0.05/0.5, 0.05, 0.05/2, 0.05/4, 0.05/8]
 
         for i in range(len(buttons)):
             if SLEEP_TIME == speeds[i]:
@@ -654,32 +665,32 @@ class MainWindow(QMainWindow, WindowMixin):
 
         def b1_clicked(self):
             global SLEEP_TIME
-            SLEEP_TIME = 0.06/0.25
+            SLEEP_TIME = 0.05/0.25
             dialogue.done(0)
 
         def b2_clicked(self):
             global SLEEP_TIME
-            SLEEP_TIME = 0.06/0.5
+            SLEEP_TIME = 0.05/0.5
             dialogue.done(0)
 
         def b3_clicked(self):
             global SLEEP_TIME
-            SLEEP_TIME = 0.06
+            SLEEP_TIME = 0.05
             dialogue.done(0)
 
         def b4_clicked(self):
             global SLEEP_TIME
-            SLEEP_TIME = 0.06/1.5
+            SLEEP_TIME = 0.05/2
             dialogue.done(0)
 
         def b5_clicked(self):
             global SLEEP_TIME
-            SLEEP_TIME = 0.06/2
+            SLEEP_TIME = 0.05/4
             dialogue.done(0)
 
         def b6_clicked(self):
             global SLEEP_TIME
-            SLEEP_TIME = 0.06/4
+            SLEEP_TIME = 0.05/8
             dialogue.done(0)
 
 
@@ -989,18 +1000,6 @@ class MainWindow(QMainWindow, WindowMixin):
         msg = u'Name:{0} \nApp Version:{1} \n{2} '.format(__appname__, __version__, sys.version_info)
         QMessageBox.information(self, u'Information', msg)
 
-    def createShape(self):
-        global CREATEING_HIERARCHY
-        CREATEING_HIERARCHY = True
-
-        assert self.beginner()
-        self.canvas.setEditing(False)
-        self.actions.create.setEnabled(False)
-
-    def asd(self):
-        self.openNextImg()
-        self.old_create_shape()
-
     def old_create_shape(self):
         assert self.beginner()
         self.canvas.setEditing(False)
@@ -1158,23 +1157,27 @@ class MainWindow(QMainWindow, WindowMixin):
             self.actions.delete_bookmark.setEnabled(True)
 
     def addBehavior(self, behavior):
+        global GLOBAL_ID
+
+        # Get behavior name from user 
+        self.labelDialog = LabelDialog(text="Enter object label", parent=self, listItem=self.labelHist)
+        behavior_name = self.labelDialog.popUp(text=self.prevLabelText)
+        behavior = self.canvas.new_behavior(behavior_name, GLOBAL_ID)
+        GLOBAL_ID += 1
+
         item = HashableQListWidgetItem()
         item.setText(0, behavior.label)
+        item.setText(1, 'abc')
         item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
         item.setCheckState(0, Qt.Checked)
         behavior.color = generateColorByText(behavior.label)
         item.setBackground(0, behavior.color)
         self.itemsToBehaviors[item] = behavior
         self.behaviorsToItems[behavior] = item
-
         self.labelList.addTopLevelItem(item)
-        global PARENT_ITEM
-        PARENT_ITEM = item
-        global CREATEING_HIERARCHY
-        CREATEING_HIERARCHY = False
 
-        for action in self.actions.onShapesPresent:
-            action.setEnabled(True)
+        # for action in self.actions.onShapesPresent:
+        #     action.setEnabled(True)
 
     def addLabel(self, shape):
         shape.paintLabel = self.displayLabelOption.isChecked()

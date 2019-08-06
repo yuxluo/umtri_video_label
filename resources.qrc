@@ -26,6 +26,7 @@
 <file alias="save-as">resources/icons/save-as.png</file>
 <file alias="color">resources/icons/color.png</file>
 <file alias="color_line">resources/icons/color_line.png</file>
+<file alias="switch">resources/icons/switch.png</file>
 <file alias="zoom">resources/icons/zoom.png</file>
 <file alias="zoom-in">resources/icons/zoom-in.png</file>
 <file alias="zoom-out">resources/icons/zoom-out.png</file>
