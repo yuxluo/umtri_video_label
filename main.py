@@ -173,7 +173,7 @@ class MainWindow(QMainWindow, WindowMixin):
         labelListContainer.setLayout(listLayout)
         self.labelList.itemActivated.connect(self.labelSelectionChanged)
         self.labelList.itemSelectionChanged.connect(self.labelSelectionChanged)
-        self.labelList.itemDoubleClicked.connect(self.editLabel)
+        # self.labelList.itemDoubleClicked.connect(self.editLabel)
         # Connect to itemChanged to detect checkbox changes.
         self.labelList.itemChanged.connect(self.labelItemChanged)
         listLayout.addWidget(self.labelList)
@@ -1054,6 +1054,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.menus.bookmarkListWidget.exec_(self.bookmarkListWidget.mapToGlobal(point))
 
     def editLabel(self):
+        print('edit clicked')
         if not self.canvas.editing():
             return
         item = self.currentItem()
@@ -1062,7 +1063,10 @@ class MainWindow(QMainWindow, WindowMixin):
         text = self.labelDialog.popUp(item.text(0))
         if text is not None:
             item.setText(0, text)
+
             item.setBackground(0, generateColorByText(text))
+            item.setBackground(1, generateColorByText(text))
+            item.setBackground(2, generateColorByText(text))
             self.setDirty()
 
 
@@ -1162,7 +1166,7 @@ class MainWindow(QMainWindow, WindowMixin):
         # Get behavior name from user 
         self.labelDialog = LabelDialog(text="Enter object label", parent=self, listItem=self.labelHist)
         behavior_name = self.labelDialog.popUp(text=self.prevLabelText)
-        behavior = self.canvas.new_behavior(behavior_name, GLOBAL_ID)
+        behavior = self.canvas.new_behavior(behavior_name, GLOBAL_ID, generateColorByText(behavior_name))
         GLOBAL_ID += 1
 
         item = HashableQListWidgetItem()
@@ -1170,8 +1174,11 @@ class MainWindow(QMainWindow, WindowMixin):
         item.setText(1, 'abc')
         item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
         item.setCheckState(0, Qt.Checked)
-        behavior.color = generateColorByText(behavior.label)
-        item.setBackground(0, behavior.color)
+        item.setBackground(0, behavior.parent_color)
+        item.setBackground(1, behavior.parent_color)
+        item.setBackground(2, behavior.parent_color)
+
+
         self.itemsToBehaviors[item] = behavior
         self.behaviorsToItems[behavior] = item
         self.labelList.addTopLevelItem(item)
@@ -1345,7 +1352,8 @@ class MainWindow(QMainWindow, WindowMixin):
             behavior = self.itemsToBehaviors[item]
             label = item.text(0)
             if label != behavior.label:
-                behavior.label = item.text(0)
+                behavior.label = label
+                behavior.parent_color = generateColorByText(label)
                 self.setDirty()
             else:  # User probably changed item visibility
                 for i in range(item.childCount()):

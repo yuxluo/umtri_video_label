@@ -25,13 +25,17 @@ CURSOR_GRAB = Qt.OpenHandCursor
 class Behavior():
     label = ""
     self_id = None 
+    behavior_type = 1
     selected = False
     shapes = []
+    start_frame = ""
+    end_frame = ""
     parent_color = None
 
-    def __init__(self, name, behavior_id):
+    def __init__(self, name, behavior_id, color):
         self.label = name
         self.self_id = behavior_id
+        self.parent_color = color
 
 class Canvas(QWidget):
     zoomRequest = pyqtSignal(int)
@@ -77,8 +81,8 @@ class Canvas(QWidget):
         self.verified = False
         self.drawSquare = False
 
-    def new_behavior(self, name, behavior_id):
-        self.behaviors.append(Behavior(name, behavior_id))
+    def new_behavior(self, name, behavior_id, color):
+        self.behaviors.append(Behavior(name, behavior_id, color))
         return self.behaviors[-1]
 
     def setDrawingColor(self, qColor):
