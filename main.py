@@ -51,8 +51,6 @@ from libs.ustr import ustr
 from libs.hashableQListWidgetItem import HashableQListWidgetItem
 from libs.hashableQListWidgetItem import HashableQListtWidgetItem
 
-# from libs.hashableQTreeWidgetItem import hashableQTreeWidgetItem
-
 __appname__ = 'UMTRI Image Annotation Tool'
 HOST = 'umtri.org'
 USERNAME = 'test'
@@ -162,7 +160,7 @@ class MainWindow(QMainWindow, WindowMixin):
         # Add some of widgets to listLayout
         # listLayout.addWidget(self.editButton)
         # listLayout.addWidget(self.diffcButton)
-        # listLayout.addWidget(useDefaultLabelContainer)
+        listLayout.addWidget(useDefaultLabelContainer)
 
         # Create and add a widget for showing current label items
         # self.labelList = QListWidget()
@@ -173,7 +171,7 @@ class MainWindow(QMainWindow, WindowMixin):
         labelListContainer.setLayout(listLayout)
         self.labelList.itemActivated.connect(self.labelSelectionChanged)
         self.labelList.itemSelectionChanged.connect(self.labelSelectionChanged)
-        # self.labelList.itemDoubleClicked.connect(self.editLabel)
+        self.labelList.itemDoubleClicked.connect(self.editLabel)
         # Connect to itemChanged to detect checkbox changes.
         self.labelList.itemChanged.connect(self.labelItemChanged)
         listLayout.addWidget(self.labelList)

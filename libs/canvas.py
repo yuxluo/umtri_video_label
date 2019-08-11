@@ -323,7 +323,7 @@ class Canvas(QWidget):
         behavior.selected = True
         self.selectedBehavior = behavior
         self.setHiding()
-        self.selectionChanged.emit(True)
+        # self.selectionChanged.emit(True)
         self.update()
 
     def selectShape(self, shape):
