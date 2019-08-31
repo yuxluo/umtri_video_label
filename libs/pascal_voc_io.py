@@ -87,63 +87,85 @@ class PascalVocWriter:
         bndbox['self_id'] = self_id
         self.boxlist.append(bndbox)
 
+    def addBehavior(self, label, self_id, start_frame, end_frame):
+        bndbox = {}
+        bndbox['behavior'] = label
+        bndbox['self_id'] = self_id
+        bndbox['start_frame'] = start_frame
+        bndbox['end_frame'] = end_frame
+        self.boxlist.append(bndbox)
+
     def appendObjects(self, top):
+        for each_behavior in self.boxlist:
+            object_item = SubElement(top, 'behaviors')
+            object_id = SubElement(object_item, 'behavior_id')
+            object_id.text = str(each_behavior['self_id'])
+            name = SubElement(object_item, 'behavior')
+            name.text = str(each_behavior['behavior'])
+            start = SubElement(object_item, 'start_frame')
+            start.text = str(each_behavior['start_frame'])
+            if start.text == "":
+                start.text = "undefined"
+            end = SubElement(object_item, 'end_frame')
+            end.text = str(each_behavior['end_frame'])
+            if end.text == "":
+                end.text = "undefined"
 
-        all_ids = []
-        for each_object in self.boxlist:
-            all_ids.append(each_object['self_id'])
+        # all_ids = []
+        # for each_object in self.boxlist:
+        #     all_ids.append(each_object['self_id'])
 
-        for each_object in self.boxlist:
-            object_item = SubElement(top, 'object')
+        # for each_object in self.boxlist:
+        #     object_item = SubElement(top, 'object')
 
-            object_id = SubElement(object_item, 'object_id')
-            object_id.text = str(each_object['self_id'])
+        #     object_id = SubElement(object_item, 'object_id')
+        #     object_id.text = str(each_object['self_id'])
 
-            name = SubElement(object_item, 'name')
-            real_name = ustr(each_object['name'])
+        #     name = SubElement(object_item, 'name')
+        #     real_name = ustr(each_object['name'])
 
-            name.text = str()
-            for letter in real_name:
-                if letter != ' ':
-                    name.text += letter
-                else:
-                    name.text = str()
+        #     name.text = str()
+        #     for letter in real_name:
+        #         if letter != ' ':
+        #             name.text += letter
+        #         else:
+        #             name.text = str()
 
-            if len(each_object['parents']) != 0:
-                parents = SubElement(object_item, 'has_parents')
-                for each_id in each_object['parents']:
-                    if each_id in all_ids:
-                        parent = SubElement(parents, 'parent')
-                        parent.text = str(each_id)
+        #     if len(each_object['parents']) != 0:
+        #         parents = SubElement(object_item, 'has_parents')
+        #         for each_id in each_object['parents']:
+        #             if each_id in all_ids:
+        #                 parent = SubElement(parents, 'parent')
+        #                 parent.text = str(each_id)
 
 
-            if len(each_object['children']) != 0:
-                children = SubElement(object_item, 'has_children')
-                for each_id in each_object['children']:
-                    if each_id in all_ids:
-                        child = SubElement(children, 'child')
-                        child.text = str(each_id)
+        #     if len(each_object['children']) != 0:
+        #         children = SubElement(object_item, 'has_children')
+        #         for each_id in each_object['children']:
+        #             if each_id in all_ids:
+        #                 child = SubElement(children, 'child')
+        #                 child.text = str(each_id)
 
-            pose = SubElement(object_item, 'pose')
-            pose.text = "Unspecified"
-            truncated = SubElement(object_item, 'truncated')
-            if int(float(each_object['ymax'])) == int(float(self.imgSize[0])) or (int(float(each_object['ymin']))== 1):
-                truncated.text = "1" # max == height or min
-            elif (int(float(each_object['xmax']))==int(float(self.imgSize[1]))) or (int(float(each_object['xmin']))== 1):
-                truncated.text = "1" # max == width or min
-            else:
-                truncated.text = "0"
-            difficult = SubElement(object_item, 'difficult')
-            difficult.text = str( bool(each_object['difficult']) & 1 )
-            bndbox = SubElement(object_item, 'bndbox')
-            xmin = SubElement(bndbox, 'xmin')
-            xmin.text = str(each_object['xmin'])
-            ymin = SubElement(bndbox, 'ymin')
-            ymin.text = str(each_object['ymin'])
-            xmax = SubElement(bndbox, 'xmax')
-            xmax.text = str(each_object['xmax'])
-            ymax = SubElement(bndbox, 'ymax')
-            ymax.text = str(each_object['ymax'])
+        #     pose = SubElement(object_item, 'pose')
+        #     pose.text = "Unspecified"
+        #     truncated = SubElement(object_item, 'truncated')
+        #     if int(float(each_object['ymax'])) == int(float(self.imgSize[0])) or (int(float(each_object['ymin']))== 1):
+        #         truncated.text = "1" # max == height or min
+        #     elif (int(float(each_object['xmax']))==int(float(self.imgSize[1]))) or (int(float(each_object['xmin']))== 1):
+        #         truncated.text = "1" # max == width or min
+        #     else:
+        #         truncated.text = "0"
+        #     difficult = SubElement(object_item, 'difficult')
+        #     difficult.text = str( bool(each_object['difficult']) & 1 )
+        #     bndbox = SubElement(object_item, 'bndbox')
+        #     xmin = SubElement(bndbox, 'xmin')
+        #     xmin.text = str(each_object['xmin'])
+        #     ymin = SubElement(bndbox, 'ymin')
+        #     ymin.text = str(each_object['ymin'])
+        #     xmax = SubElement(bndbox, 'xmax')
+        #     xmax.text = str(each_object['xmax'])
+        #     ymax = SubElement(bndbox, 'ymax')
+        #     ymax.text = str(each_object['ymax'])
 
     def save(self, targetFile=None):
         root = self.genXML()

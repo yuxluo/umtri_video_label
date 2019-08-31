@@ -171,7 +171,7 @@ class MainWindow(QMainWindow, WindowMixin):
         labelListContainer.setLayout(listLayout)
         self.labelList.itemActivated.connect(self.labelSelectionChanged)
         self.labelList.itemSelectionChanged.connect(self.labelSelectionChanged)
-        self.labelList.itemDoubleClicked.connect(self.double_click_label)
+        self.labelList.itemDoubleClicked.connect(self.labelItemDoubleClicked)
         # Connect to itemChanged to detect checkbox changes.
         self.labelList.itemChanged.connect(self.labelItemChanged)
         listLayout.addWidget(self.labelList)
@@ -622,7 +622,7 @@ class MainWindow(QMainWindow, WindowMixin):
         PARENT_ID = self.itemsToShapes[item].self_id
         self.createShape()
 
-    def double_click_label(self):
+    def labelItemDoubleClicked(self):
         selected_item = self.labelList.currentItem()
         if selected_item in self.itemsToBehaviors:
             if selected_item.text(1) is None or selected_item.text(1) == "": 
@@ -642,6 +642,7 @@ class MainWindow(QMainWindow, WindowMixin):
             frame_num = filename.split('-')[-1].split('.')[0]
             selected_behavior.start_frame = filename
             selected_item.setText(1, frame_num)
+            self.setDirty()
 
     def setEnd(self):
         selected_item = self.labelList.currentItem()
@@ -651,6 +652,7 @@ class MainWindow(QMainWindow, WindowMixin):
             frame_num = filename.split('-')[-1].split('.')[0]
             selected_behavior.end_frame = filename
             selected_item.setText(2, frame_num)
+            self.setDirty()
 
     def createShape(self):
         assert self.beginner()
@@ -1214,6 +1216,8 @@ class MainWindow(QMainWindow, WindowMixin):
         # Get behavior name from user 
         self.labelDialog = LabelDialog(text="Enter object label", parent=self, listItem=self.labelHist)
         behavior_name = self.labelDialog.popUp(text=self.prevLabelText)
+        if (behavior_name is None or behavior_name == ""):
+            return
         behavior = self.canvas.new_behavior(behavior_name, GLOBAL_ID, generateColorByText(behavior_name))
         GLOBAL_ID += 1
 
@@ -1367,6 +1371,7 @@ class MainWindow(QMainWindow, WindowMixin):
             if self.usingPascalVocFormat is True:
                 if annotationFilePath[-4:].lower() != ".xml":
                     annotationFilePath += XML_EXT
+                self.labelFile.saveBehavior(self.canvas.behaviors, self.filePath)
                 self.labelFile.savePascalVocFormat(annotationFilePath, shapes, self.filePath, self.imageData,
                                                    self.lineColor.getRgb(), self.fillColor.getRgb())
             elif self.usingYoloFormat is True:

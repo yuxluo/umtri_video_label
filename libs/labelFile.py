@@ -29,6 +29,32 @@ class LabelFile(object):
         self.imageData = None
         self.verified = False
 
+    def saveBehavior(self, behaviors, imagePath):
+        imgFolderPath = os.path.dirname(imagePath)
+        imgFolderName = os.path.split(imgFolderPath)[-1]
+        imgFileName = os.path.basename(imagePath)
+        image = QImage()
+        image.load(imagePath)
+        imageShape = [image.height(), image.width(),
+                      1 if image.isGrayscale() else 3]
+        writer = PascalVocWriter(imgFolderName, imgFileName,
+                            imageShape, localImgPath=imagePath)
+        writer.verified = self.verified
+
+        for behavior in behaviors:
+            label = behavior.label
+            self_id = behavior.self_id
+            start_frame = behavior.start_frame
+            end_frame = behavior.end_frame
+            if len(behavior.shapes) != 0:
+                print('add the shapes to list')
+                #writer.addBndBox(bndbox[0], bndbox[1], bndbox[2], bndbox[3], label, difficult, parents, children, self_id)
+            else:
+                writer.addBehavior(label, self_id, start_frame, end_frame)
+
+        writer.save(targetFile= (imgFolderPath + "/behavior.xml"))
+        return
+
     def savePascalVocFormat(self, filename, shapes, imagePath, imageData,
                             lineColor=None, fillColor=None, databaseSrc=None):
         imgFolderPath = os.path.dirname(imagePath)

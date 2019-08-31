@@ -25,7 +25,6 @@ CURSOR_GRAB = Qt.OpenHandCursor
 class Behavior():
     label = ""
     self_id = None 
-    behavior_type = 1
     selected = False
     shapes = []
     start_frame = ""
