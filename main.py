@@ -279,7 +279,7 @@ class MainWindow(QMainWindow, WindowMixin):
                              'space', 'play_icon', getStr('playDetail'))
 
 
-        # verify = action(getStr('verifyImg'), self.asd,
+        # verify = action(getStr('verifyImg'), self.createShape,
         #                 'space', 'verify', getStr('verifyImgDetail'))
 
         save = action(getStr('save'), self.saveFile,
@@ -306,7 +306,7 @@ class MainWindow(QMainWindow, WindowMixin):
         create = action('New Behavior', self.addBehavior,
                         'w', 'new', getStr('crtBoxDetail'), enabled=False)
 
-        switch = action('Switch Mode', self.switch_mode,
+        switch = action('Switch Mode', self.createShape,
                         'w', 'switch', 'Switch the Creation Mode', enabled=False)
 
         delete = action(getStr('delBox'), self.deleteSelectedShape,
@@ -614,6 +614,10 @@ class MainWindow(QMainWindow, WindowMixin):
         PARENT_ID = self.itemsToShapes[item].self_id
         self.createShape()
 
+    def createShape(self):
+        assert self.beginner()
+        self.canvas.setEditing(False)
+        self.actions.create.setEnabled(False)
 
     def progress(self, filename, size, sent):
         progress = float(sent)/float(size) * 100
@@ -1055,7 +1059,8 @@ class MainWindow(QMainWindow, WindowMixin):
         print('edit clicked')
         if not self.canvas.editing():
             return
-        item = self.currentItem()
+        item = self.labelList.currentItem()
+        # item = self.currentItem()
         if not item:
             return
         text = self.labelDialog.popUp(item.text(0))
@@ -1131,14 +1136,20 @@ class MainWindow(QMainWindow, WindowMixin):
 
     # React to canvas signals.
     def shapeSelectionChanged(self, selected=False):
+        print('shape selection changed')
         if self._noSelectionSlot:
             self._noSelectionSlot = False
         else:
             shape = self.canvas.selectedShape
+            behavior = self.canvas.selectedBehavior
             if shape:
                 self.shapesToItems[shape].setSelected(True)
+            elif behavior:
+                self.behaviorsToItems[behavior].setSelected(True)
             else:
                 self.labelList.clearSelection()
+
+
         self.actions.delete.setEnabled(selected)
         self.actions.add_part.setEnabled(selected)
         self.actions.copy.setEnabled(selected)
@@ -1169,7 +1180,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
         item = HashableQListWidgetItem()
         item.setText(0, behavior.label)
-        item.setText(1, 'abc')
+        # item.setText(1, 'abc')
         item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
         item.setCheckState(0, Qt.Checked)
         item.setBackground(0, behavior.parent_color)
@@ -1181,42 +1192,57 @@ class MainWindow(QMainWindow, WindowMixin):
         self.behaviorsToItems[behavior] = item
         self.labelList.addTopLevelItem(item)
 
+        self.setDirty()
         # for action in self.actions.onShapesPresent:
         #     action.setEnabled(True)
 
     def addLabel(self, shape):
         shape.paintLabel = self.displayLabelOption.isChecked()
+        global CREATEING_HIERARCHY
         item = HashableQListWidgetItem()
         item.setText(0, shape.label)
         item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
         item.setCheckState(0, Qt.Checked)
-        item.setBackground(0, PARENT_ITEM.background(0))
+        item.setBackground(0, generateColorByText(shape.label))
         self.itemsToShapes[item] = shape
         self.shapesToItems[shape] = item
 
-        PARENT_ITEM.addChild(item)
-        PARENT_ITEM.setExpanded(True)
-        self.itemsToBehaviors[PARENT_ITEM].shapes.append(shape)
+        if CREATEING_HIERARCHY:
+            PARENT_ITEM.addChild(item)
+            PARENT_ITEM.setExpanded(True)
+        else:
+            self.labelList.addTopLevelItem(item)
+        CREATEING_HIERARCHY = False
 
-        # for action in self.actions.onShapesPresent:
-        #     action.setEnabled(True)
+        for action in self.actions.onShapesPresent:
+            action.setEnabled(True)
+
 
 
     def remLabel(self, shape):
         if shape is None:
             # print('rm empty label')
             return
-        item = self.shapesToItems[shape]
 
-        while item.childCount() != 0:
-            child = item.child(0)
-            self.remLabel(self.itemsToShapes[child])
+        if shape in self.shapesToItems:
+            item = self.shapesToItems[shape]
+            while item.childCount() != 0:
+                child = item.child(0)
+                self.remLabel(self.itemsToShapes[child])
+
+            del self.shapesToItems[shape]
+            del self.itemsToShapes[item]
+
+        else:
+            item = self.behaviorsToItems[shape]
+            print("delete bounding boxes")
+            del self.behaviorsToItems[shape]
+            del self.itemsToBehaviors[item]
 
         
         self.canvas.delete_shape(shape)
 
-        del self.shapesToItems[shape]
-        del self.itemsToShapes[item]
+
         root = self.labelList.invisibleRootItem()
         (item.parent() or root).removeChild(item)
 
@@ -1325,7 +1351,8 @@ class MainWindow(QMainWindow, WindowMixin):
         self.shapeSelectionChanged(True)
 
     def labelSelectionChanged(self):
-        item = self.currentItem()
+        # item = self.currentItem()
+        item = self.labelList.currentItem()
         if item and self.canvas.editing():
             self._noSelectionSlot = True
             if item in self.itemsToShapes:
@@ -1372,41 +1399,35 @@ class MainWindow(QMainWindow, WindowMixin):
         position MUST be in global coordinates.
         """
         global CREATEING_HIERARCHY
-        global GLOBAL_ID
 
-        if CREATEING_HIERARCHY:
-            if not self.useDefaultLabelCheckbox.isChecked() or not self.defaultLabelTextLine.text():
-                if len(self.labelHist) > 0:
-                        self.labelDialog = LabelDialog(
-                            parent=self, listItem=self.labelHist)
+        if not self.useDefaultLabelCheckbox.isChecked() or not self.defaultLabelTextLine.text():
+            if len(self.labelHist) > 0:
+                    self.labelDialog = LabelDialog(
+                        parent=self, listItem=self.labelHist)
 
-                # Sync single class mode from PR#106
-                if self.singleClassMode.isChecked() and self.lastLabel:
-                    text = self.lastLabel
-                else:
-                        behavior_name = self.labelDialog.popUp(text=self.prevLabelText)
+            # Sync single class mode from PR#106
+            if self.singleClassMode.isChecked() and self.lastLabel:
+                text = self.lastLabel
             else:
-                text = self.defaultLabelTextLine.text()
+                    text = self.labelDialog.popUp(text=self.prevLabelText)
+                    self.lastLabel = text
+        else:
+            text = self.defaultLabelTextLine.text()
 
-            parent_behavior = self.canvas.new_behavior(behavior_name, GLOBAL_ID)
-            self.addBehavior(parent_behavior)
-
-        
-        text = self.filePath.split('/')[-1].split('-')[-1].split('.')[0]
-        self.lastLabel = text
         # Add Chris
         self.diffcButton.setChecked(False)
         if text is not None:
             self.prevLabelText = text
-            generate_color = self.itemsToBehaviors[PARENT_ITEM].color
+            generate_color = generateColorByText(text)
 
+            global GLOBAL_ID
             global PARENT_ID
 
             shape = self.canvas.setLastLabel(text, generate_color, generate_color, GLOBAL_ID, PARENT_ID, CREATEING_HIERARCHY)
             GLOBAL_ID += 1
 
-            self.addLabel(shape)
 
+            self.addLabel(shape)
             if self.beginner():  # Switch to edit mode.
                 self.canvas.setEditing(True)
                 self.actions.create.setEnabled(True)
@@ -1419,8 +1440,6 @@ class MainWindow(QMainWindow, WindowMixin):
         else:
             # self.canvas.undoLastLine()
             self.canvas.resetAllLines()
-
-        # self.continuous_add()
 
     def scrollRequest(self, delta, orientation):
         units = - delta / (8 * 15)
@@ -1975,12 +1994,15 @@ class MainWindow(QMainWindow, WindowMixin):
             self.setDirty()
 
     def deleteSelectedShape(self):
-        if len(self.canvas.selectedShape.children) != 0:
-            alert_box = QMessageBox.question(self, '⚠⚠ ATTENTION ⚠⚠', "Removing this label will result in the removal of all its children. \n\nDo you wish to continue?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-            if alert_box == QMessageBox.Yes:
-                pass
-            else:
-                return
+        # if len(self.canvas.selectedBehavior.shapes) != 0:
+        if self.labelList.currentItem() in self.itemsToBehaviors:
+            if len(self.canvas.selectedBehavior.shapes) != 0:
+                alert_box = QMessageBox.question(self, '⚠⚠ ATTENTION ⚠⚠', "Removing this behavior will result in the removal of all its bounding boxes. \n\nDo you wish to continue?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                if alert_box == QMessageBox.Yes:
+                    pass
+                else:
+                    return
+
         self.remLabel(self.canvas.deleteSelected())
         self.setDirty()
         if self.noShapes():

@@ -323,12 +323,14 @@ class Canvas(QWidget):
         behavior.selected = True
         self.selectedBehavior = behavior
         self.setHiding()
-        # self.selectionChanged.emit(True)
+        self.selectionChanged.emit(True)
+        self.selectedShape = None
         self.update()
 
     def selectShape(self, shape):
         self.deSelectShape()
         shape.selected = True
+        self.selectedBehavior = None
         self.selectedShape = shape
         self.setHiding()
         self.selectionChanged.emit(True)
@@ -449,9 +451,20 @@ class Canvas(QWidget):
             self.update()
             return shape
 
+        elif self.selectedBehavior:
+            behavior = self.selectedBehavior
+            self.behaviors.remove(self.selectedBehavior)
+            self.selectBehavior = None
+            self.update()
+            return behavior
+
     def delete_shape(self, shape):
         try:
             self.shapes.remove(shape)
+        except:
+            return
+        try:
+            self.behaviors.remove(shape)
         except:
             return
 
