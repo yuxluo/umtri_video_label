@@ -171,7 +171,7 @@ class MainWindow(QMainWindow, WindowMixin):
         labelListContainer.setLayout(listLayout)
         self.labelList.itemActivated.connect(self.labelSelectionChanged)
         self.labelList.itemSelectionChanged.connect(self.labelSelectionChanged)
-        self.labelList.itemDoubleClicked.connect(self.editLabel)
+        self.labelList.itemDoubleClicked.connect(self.double_click_label)
         # Connect to itemChanged to detect checkbox changes.
         self.labelList.itemChanged.connect(self.labelItemChanged)
         listLayout.addWidget(self.labelList)
@@ -622,11 +622,35 @@ class MainWindow(QMainWindow, WindowMixin):
         PARENT_ID = self.itemsToShapes[item].self_id
         self.createShape()
 
+    def double_click_label(self):
+        selected_item = self.labelList.currentItem()
+        if selected_item in self.itemsToBehaviors:
+            if selected_item.text(1) is None or selected_item.text(1) == "": 
+                self.editLabel()
+            else:
+                behavior = self.itemsToBehaviors[selected_item]
+                filepath = self.filePath.split('/')
+                filepath[-1] = behavior.start_frame
+                currIndex = self.mImgList.index(ustr('/'.join(filepath)))
+                self.update_slider_value(currIndex)
+
     def setStart(self):
-        print("set start called")
+        selected_item = self.labelList.currentItem()
+        if selected_item is not None:
+            selected_behavior = self.itemsToBehaviors[selected_item]
+            filename = self.filePath.split('/')[-1]
+            frame_num = filename.split('-')[-1].split('.')[0]
+            selected_behavior.start_frame = filename
+            selected_item.setText(1, frame_num)
 
     def setEnd(self):
-        print("set end called")
+        selected_item = self.labelList.currentItem()
+        if selected_item is not None:
+            selected_behavior = self.itemsToBehaviors[selected_item]
+            filename = self.filePath.split('/')[-1]
+            frame_num = filename.split('-')[-1].split('.')[0]
+            selected_behavior.end_frame = filename
+            selected_item.setText(2, frame_num)
 
     def createShape(self):
         assert self.beginner()
@@ -1163,8 +1187,8 @@ class MainWindow(QMainWindow, WindowMixin):
             else:
                 self.labelList.clearSelection()
 
-        self.actions.set_start.setEnable(selected)
-        self.actions.set_end.setEnable(selected)
+        self.actions.set_start.setEnabled(selected)
+        self.actions.set_end.setEnabled(selected)
         self.actions.delete.setEnabled(selected)
         self.actions.add_part.setEnabled(selected)
         self.actions.copy.setEnabled(selected)
@@ -1195,7 +1219,6 @@ class MainWindow(QMainWindow, WindowMixin):
 
         item = HashableQListWidgetItem()
         item.setText(0, behavior.label)
-        # item.setText(1, 'abc')
         item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
         item.setCheckState(0, Qt.Checked)
         item.setBackground(0, behavior.parent_color)
