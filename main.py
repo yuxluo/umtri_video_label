@@ -371,7 +371,15 @@ class MainWindow(QMainWindow, WindowMixin):
         add_part = action(getStr('addPart'), self.addPart,
                       'Ctrl+A', 'add', getStr('addPartDetail'),
                       enabled=False)
-        
+
+        set_start = action(getStr('setStart'), self.setStart,
+                'Ctrl+A', 'start', getStr('setStartDetail'),
+                enabled=False)
+
+        set_end = action(getStr('setEnd'), self.setEnd,
+                'Ctrl+A', 'end', getStr('setEndDetail'),
+                enabled=False)
+
 
         self.editButton.setDefaultAction(edit)
 
@@ -388,7 +396,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
         # Lavel list context menu.
         labelMenu = QMenu()
-        addActions(labelMenu, (edit, delete, add_part))
+        addActions(labelMenu, (edit, delete, add_part, set_start, set_end))
 
         bookmarkMenu = QMenu()
         addActions(bookmarkMenu, (edit_bookmark, delete_bookmark))
@@ -411,7 +419,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
         # Store actions for further handling.
         self.actions = struct(save=save, play_pause=play_pause, save_format=save_format, saveAs=saveAs, open=open, close=close, resetAll = resetAll,
-                              lineColor=color1, create=create, delete=delete, add_part=add_part, edit=edit, copy=copy, edit_bookmark=edit_bookmark,
+                              lineColor=color1, create=create, delete=delete, add_part=add_part, set_start=set_start, set_end=set_end, edit=edit, copy=copy, edit_bookmark=edit_bookmark,
                               createMode=createMode, editMode=editMode, advancedMode=advancedMode, delete_bookmark=delete_bookmark,
                               shapeLineColor=shapeLineColor, shapeFillColor=shapeFillColor, switch=switch,
                               zoom=zoom, zoomIn=zoomIn, zoomOut=zoomOut, zoomOrg=zoomOrg,
@@ -613,6 +621,12 @@ class MainWindow(QMainWindow, WindowMixin):
         PARENT_ITEM = item
         PARENT_ID = self.itemsToShapes[item].self_id
         self.createShape()
+
+    def setStart(self):
+        print("set start called")
+
+    def setEnd(self):
+        print("set end called")
 
     def createShape(self):
         assert self.beginner()
@@ -1149,7 +1163,8 @@ class MainWindow(QMainWindow, WindowMixin):
             else:
                 self.labelList.clearSelection()
 
-
+        self.actions.set_start.setEnable(selected)
+        self.actions.set_end.setEnable(selected)
         self.actions.delete.setEnabled(selected)
         self.actions.add_part.setEnabled(selected)
         self.actions.copy.setEnabled(selected)
