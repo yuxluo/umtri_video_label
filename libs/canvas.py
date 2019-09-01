@@ -767,6 +767,10 @@ class Canvas(QWidget):
         self.current = None
         self.repaint()
 
+    def loadBehaviors(self, behaviors):
+        self.behaviors = list(behaviors)
+        self.current = None
+
     def setShapeVisible(self, shape, value):
         self.visible[shape] = value
         self.repaint()

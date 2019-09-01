@@ -1238,7 +1238,25 @@ class MainWindow(QMainWindow, WindowMixin):
         # for action in self.actions.onShapesPresent:
         #     action.setEnabled(True)
 
-    def addLabel(self, shape):
+    def addLabel(self, behavior):
+        global GLOBAL_ID
+        GLOBAL_ID += 1
+        item = HashableQListWidgetItem()
+        item.setText(0, behavior.label)
+        item.setText(1, behavior.start_frame.split('-')[-1].split('.')[0])
+        item.setText(2, behavior.end_frame.split('-')[-1].split('.')[0])
+        item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
+        item.setCheckState(0, Qt.Checked)
+        item.setBackground(0, behavior.parent_color)
+        item.setBackground(1, behavior.parent_color)
+        item.setBackground(2, behavior.parent_color)
+
+        self.itemsToBehaviors[item] = behavior
+        self.behaviorsToItems[behavior] = item
+        self.labelList.addTopLevelItem(item)
+        
+
+    def addLabel_old(self, shape):
         shape.paintLabel = self.displayLabelOption.isChecked()
         global CREATEING_HIERARCHY
         item = HashableQListWidgetItem()
@@ -1307,7 +1325,19 @@ class MainWindow(QMainWindow, WindowMixin):
         return -1
 
 
-    def loadLabels(self, shapes):
+    def loadLabels(self, behaviors):
+        b = []
+
+        for behavior_name, behavior_id, starting_frame, ending_frame in behaviors:
+            behavior = self.canvas.new_behavior(behavior_name, GLOBAL_ID, generateColorByText(behavior_name))
+            behavior.start_frame = starting_frame
+            behavior.end_frame = ending_frame
+            b.append(behavior)
+            self.addLabel(behavior)
+        
+        self.canvas.loadBehaviors(b)
+
+    def loadLabels_old(self, shapes):
         s = []
         for label, points, parents, children, self_id, line_color, fill_color, difficult in shapes:
             shape = Shape(label=label)
@@ -1805,6 +1835,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.dirname = dirpath
         self.filePath = None
         self.fileListWidget.clear()
+        self.loadPascalXMLByFilename(dirpath + "/behavior.xml")
         self.mImgList = self.scanAllImages(dirpath)
         self.openNextImg()
         for imgPath in self.mImgList:
@@ -2089,16 +2120,16 @@ class MainWindow(QMainWindow, WindowMixin):
                             self.labelHist.append(line)
 
     def loadPascalXMLByFilename(self, xmlPath):
-        if self.filePath is None:
-            return
+        # if self.filePath is None:
+        #     return
         if os.path.isfile(xmlPath) is False:
             return
 
         self.set_format(FORMAT_PASCALVOC)
 
         tVocParseReader = PascalVocReader(xmlPath)
-        shapes = tVocParseReader.getShapes()
-        self.loadLabels(shapes)
+        behaviors = tVocParseReader.getBehaviors()
+        self.loadLabels(behaviors)
         self.canvas.verified = tVocParseReader.verified
 
     def loadYOLOTXTByFilename(self, txtPath):

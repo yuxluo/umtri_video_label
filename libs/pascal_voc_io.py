@@ -189,14 +189,21 @@ class PascalVocReader:
         # [labbel, [(x1,y1), (x2,y2), (x3,y3), (x4,y4)], color, color, difficult]
         self.shapes = []
         self.filepath = filepath
+        self.behaviors = []
         self.verified = False
         try:
-            self.parseXML()
+            self.readBehavior()
         except:
             pass
 
     def getShapes(self):
         return self.shapes
+
+    def getBehaviors(self):
+        return self.behaviors
+
+    def addBehavior(self, behavior_name, behavior_id, starting_frame, ending_frame):
+        self.behaviors.append((behavior_name, behavior_id, starting_frame, ending_frame))
 
     def addShape(self, label, bndbox, difficult, parents, children, object_id):
 
@@ -220,6 +227,18 @@ class PascalVocReader:
         ymax = int(float(bndbox.find('ymax').text))
         points = [(xmin, ymin), (xmax, ymin), (xmax, ymax), (xmin, ymax)]
         self.shapes.append((label, points, parent_ids, child_ids, object_id, None, None, difficult, ))
+
+    def readBehavior(self):
+        assert self.filepath.endswith(XML_EXT), "Unsupport file format"
+        parser = etree.XMLParser(encoding=ENCODE_METHOD)
+        xmltree = ElementTree.parse(self.filepath, parser=parser).getroot()
+        for object_iter in xmltree.findall('behaviors'):
+            label = object_iter.find('behavior').text
+            object_id = int(object_iter.find('behavior_id').text)
+            start_frame = object_iter.find('start_frame').text
+            end_frame = object_iter.find('end_frame').text
+            self.addBehavior(label, object_id, start_frame, end_frame)
+        return True
 
     def parseXML(self):
         assert self.filepath.endswith(XML_EXT), "Unsupport file format"
