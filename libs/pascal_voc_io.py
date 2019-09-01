@@ -49,19 +49,19 @@ class PascalVocWriter:
         if self.verified:
             top.set('verified', 'yes')
 
-        folder = SubElement(top, 'folder')
+        folder = SubElement(top, 'data_set')
         folder.text = self.foldername
 
-        filename = SubElement(top, 'filename')
-        filename.text = self.filename
+        # filename = SubElement(top, 'filename')
+        # filename.text = self.filename
 
-        if self.localImgPath is not None:
-            localImgPath = SubElement(top, 'path')
-            localImgPath.text = self.localImgPath
+        # if self.localImgPath is not None:
+        #     localImgPath = SubElement(top, 'path')
+        #     localImgPath.text = self.localImgPath
 
-        source = SubElement(top, 'source')
-        database = SubElement(source, 'database')
-        database.text = self.databaseSrc
+        # source = SubElement(top, 'source')
+        # database = SubElement(source, 'database')
+        # database.text = self.databaseSrc
 
         size_part = SubElement(top, 'size')
         width = SubElement(size_part, 'width')
@@ -74,8 +74,8 @@ class PascalVocWriter:
         else:
             depth.text = '1'
 
-        segmented = SubElement(top, 'segmented')
-        segmented.text = '0'
+        # segmented = SubElement(top, 'segmented')
+        # segmented.text = '0'
         return top
 
     def addBndBox(self, xmin, ymin, xmax, ymax, name, difficult, parents, children, self_id):
