@@ -616,10 +616,8 @@ class MainWindow(QMainWindow, WindowMixin):
         item = self.currentItem()
         if not item:
             return
-        global PARENT_ID
         global PARENT_ITEM
         PARENT_ITEM = item
-        PARENT_ID = self.itemsToShapes[item].self_id
         self.createShape()
 
     def labelItemDoubleClicked(self):
@@ -1177,7 +1175,6 @@ class MainWindow(QMainWindow, WindowMixin):
 
     # React to canvas signals.
     def shapeSelectionChanged(self, selected=False):
-        print('shape selection changed')
         if self._noSelectionSlot:
             self._noSelectionSlot = False
         else:
@@ -1192,10 +1189,10 @@ class MainWindow(QMainWindow, WindowMixin):
 
         self.actions.set_start.setEnabled(selected)
         self.actions.set_end.setEnabled(selected)
-        self.actions.delete.setEnabled(selected)
         self.actions.add_part.setEnabled(selected)
-        self.actions.copy.setEnabled(selected)
         self.actions.edit.setEnabled(selected)
+        self.actions.delete.setEnabled(selected)
+        self.actions.copy.setEnabled(selected)
         self.actions.shapeLineColor.setEnabled(selected)
         self.actions.shapeFillColor.setEnabled(selected)
 
@@ -1217,6 +1214,8 @@ class MainWindow(QMainWindow, WindowMixin):
         # Get behavior name from user 
         self.labelDialog = LabelDialog(text="Enter object label", parent=self, listItem=self.labelHist)
         behavior_name = self.labelDialog.popUp(text=self.prevLabelText)
+        if behavior_name not in self.labelHist:
+                self.labelHist.append(behavior_name)
         if (behavior_name is None or behavior_name == ""):
             return
         behavior = self.canvas.new_behavior(behavior_name, GLOBAL_ID, generateColorByText(behavior_name))
@@ -1239,9 +1238,30 @@ class MainWindow(QMainWindow, WindowMixin):
         # for action in self.actions.onShapesPresent:
         #     action.setEnabled(True)
 
-    def addLabel(self, behavior):
-        global GLOBAL_ID
-        GLOBAL_ID += 1
+    def addLabel(self, behavior, type="behavior"):
+        if type == "shape":
+            frame_number = behavior.filename.split('-')[-1].split('.')[0]
+            item = HashableQListWidgetItem()
+            item.setText(1, frame_number)
+            item.setText(0, 'frame:')
+            item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
+            item.setCheckState(0, Qt.Checked)
+            item.setBackground(0, behavior.line_color)
+            item.setBackground(1, behavior.line_color)
+            item.setBackground(2, behavior.line_color)
+
+            self.itemsToShapes[item] = behavior
+            self.shapesToItems[behavior] = item
+            PARENT_ITEM.addChild(item)
+            PARENT_ITEM.setExpanded(True)
+            global CREATEING_HIERARCHY 
+            CREATEING_HIERARCHY = False
+
+            for action in self.actions.onShapesPresent:
+                action.setEnabled(True)
+
+            return
+
         item = HashableQListWidgetItem()
         item.setText(0, behavior.label)
         item.setText(1, behavior.start_frame.split('-')[-1].split('.')[0])
@@ -1468,40 +1488,19 @@ class MainWindow(QMainWindow, WindowMixin):
 
     # Callback functions:
     def newShape(self):
-        """Pop-up and give focus to the label editor.
 
-        position MUST be in global coordinates.
-        """
-        global CREATEING_HIERARCHY
+        filename = self.filePath.split('/')[-1]
+        frame_num = filename.split('-')[-1].split('.')[0]
+        text = frame_num 
 
-        if not self.useDefaultLabelCheckbox.isChecked() or not self.defaultLabelTextLine.text():
-            if len(self.labelHist) > 0:
-                    self.labelDialog = LabelDialog(
-                        parent=self, listItem=self.labelHist)
-
-            # Sync single class mode from PR#106
-            if self.singleClassMode.isChecked() and self.lastLabel:
-                text = self.lastLabel
-            else:
-                    text = self.labelDialog.popUp(text=self.prevLabelText)
-                    self.lastLabel = text
-        else:
-            text = self.defaultLabelTextLine.text()
-
-        # Add Chris
-        self.diffcButton.setChecked(False)
         if text is not None:
             self.prevLabelText = text
-            generate_color = generateColorByText(text)
+            generate_color = self.itemsToBehaviors[PARENT_ITEM].parent_color
+            shape = self.canvas.setLastLabel(text, generate_color, generate_color, filename)
+            parent_behavior = self.itemsToBehaviors[PARENT_ITEM]
+            parent_behavior.shapes.append(shape)
 
-            global GLOBAL_ID
-            global PARENT_ID
-
-            shape = self.canvas.setLastLabel(text, generate_color, generate_color, GLOBAL_ID, PARENT_ID, CREATEING_HIERARCHY)
-            GLOBAL_ID += 1
-
-
-            self.addLabel(shape)
+            self.addLabel(shape, "shape")
             if self.beginner():  # Switch to edit mode.
                 self.canvas.setEditing(True)
                 self.actions.create.setEnabled(True)
@@ -1509,8 +1508,6 @@ class MainWindow(QMainWindow, WindowMixin):
                 self.actions.editMode.setEnabled(True)
             self.setDirty()
 
-            if text not in self.labelHist:
-                self.labelHist.append(text)
         else:
             # self.canvas.undoLastLine()
             self.canvas.resetAllLines()

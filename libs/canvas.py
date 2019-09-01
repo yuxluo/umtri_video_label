@@ -713,26 +713,16 @@ class Canvas(QWidget):
         points = [p1+p2 for p1, p2 in zip(self.selectedShape.points, [step]*4)]
         return True in map(self.outOfPixmap, points)
 
-    def setLastLabel(self, text, line_color = None, fill_color = None, self_id = -1, parent_id = -1, adding_child = False):
+    def setLastLabel(self, text, line_color = None, fill_color = None, filename = "undefined"):
         assert text
         self.shapes[-1].label = text
+        self.shapes[-1].filename = filename
         if line_color:
             self.shapes[-1].line_color = line_color
 
         if fill_color:
             self.shapes[-1].fill_color = fill_color
         
-        # Establishing relationship hierarchy
-        self.shapes[-1].self_id = self_id
-        # if adding_child: 
-        #     self.shapes[-1].parents.append(parent_id)
-        #     self.shapes[self.find_parent_index(parent_id)].children.append(self_id)
-
-        #     for parent_index in range(len(self.shapes)):
-        #         if self.shapes[parent_index].self_id == parent_id:
-        #             self.shapes.insert(parent_index + 1, self.shapes.pop(-1))
-        #             return self.shapes[parent_index + 1]
-
         return self.shapes[-1]
 
     def find_parent_index(self, parent_id):

@@ -48,6 +48,7 @@ class Shape(object):
         self.selected = False
         self.difficult = difficult
         self.paintLabel = paintLabel
+        self.filename = "undefined"
 
         self._highlightIndex = None
         self._highlightMode = self.NEAR_VERTEX
