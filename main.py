@@ -643,6 +643,7 @@ class MainWindow(QMainWindow, WindowMixin):
             selected_behavior.start_frame = filename
             selected_item.setText(1, frame_num)
             self.setDirty()
+            print('setting dirty')
 
     def setEnd(self):
         selected_item = self.labelList.currentItem()
@@ -1598,6 +1599,8 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def loadFile(self, filePath=None):
         """Load the specified file, or the last opened file if None."""
+        if self.dirty == True:
+            self.force_save()
         # self.resetState()
         self.canvas.setEnabled(False)
         if filePath is None:
@@ -1855,8 +1858,9 @@ class MainWindow(QMainWindow, WindowMixin):
             self.load_file_by_index(self.slider.value())
 
     def update_slider_value(self, new_value):
-        self.slider.setValue(new_value)
 
+        self.slider.setValue(new_value)
+        
     def verifyImg(self, _value=False):
         # Proceding next image without dialog if having any label
         if self.filePath is not None:
