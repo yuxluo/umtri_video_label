@@ -48,7 +48,7 @@ class LabelFile(object):
             end_frame = behavior.end_frame
             if len(behavior.shapes) != 0:
                 print('add the shapes to list')
-                #writer.addBndBox(bndbox[0], bndbox[1], bndbox[2], bndbox[3], label, difficult, parents, children, self_id)
+                writer.addBehavior(label, self_id, start_frame, end_frame, behavior.shapes)
             else:
                 writer.addBehavior(label, self_id, start_frame, end_frame)
 

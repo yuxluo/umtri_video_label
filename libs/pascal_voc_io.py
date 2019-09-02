@@ -24,6 +24,31 @@ class PascalVocWriter:
         self.localImgPath = localImgPath
         self.verified = False
 
+    def convertPoints2BndBox(self, QPoints):
+        points=[(p.x(), p.y()) for p in QPoints]
+        xmin = float('inf')
+        ymin = float('inf')
+        xmax = float('-inf')
+        ymax = float('-inf')
+        for p in points:
+            x = p[0]
+            y = p[1]
+            xmin = min(x, xmin)
+            ymin = min(y, ymin)
+            xmax = max(x, xmax)
+            ymax = max(y, ymax)
+
+        # Martin Kersner, 2015/11/12
+        # 0-valued coordinates of BB caused an error while
+        # training faster-rcnn object detector.
+        if xmin < 1:
+            xmin = 1
+
+        if ymin < 1:
+            ymin = 1
+
+        return (int(xmin), int(ymin), int(xmax), int(ymax))
+
     def prettify(self, elem):
         """
             Return a pretty-printed XML string for the Element.
@@ -87,12 +112,13 @@ class PascalVocWriter:
         bndbox['self_id'] = self_id
         self.boxlist.append(bndbox)
 
-    def addBehavior(self, label, self_id, start_frame, end_frame):
+    def addBehavior(self, label, self_id, start_frame, end_frame, shapes=None):
         bndbox = {}
         bndbox['behavior'] = label
         bndbox['self_id'] = self_id
         bndbox['start_frame'] = start_frame
         bndbox['end_frame'] = end_frame
+        bndbox['shapes'] = shapes
         self.boxlist.append(bndbox)
 
     def appendObjects(self, top):
@@ -110,6 +136,25 @@ class PascalVocWriter:
             end.text = str(each_behavior['end_frame'])
             if end.text == "":
                 end.text = "undefined"
+
+            if each_behavior['shapes'] != None:
+                shapes = SubElement(object_item, 'bounding_boxes')
+                for each_shape in each_behavior['shapes']:
+                    bounding_box = self.convertPoints2BndBox(each_shape.points)
+
+                    shape = SubElement(shapes, 'bounding_box')
+                    frame = SubElement(shape, 'frame')
+                    frame.text = str(each_shape.filename)
+
+                    bndbox = SubElement(shape, 'bndbox')
+                    xmin = SubElement(bndbox, 'xmin')
+                    xmin.text = str(bounding_box[0])
+                    ymin = SubElement(bndbox, 'ymin')
+                    ymin.text = str(bounding_box[1])
+                    xmax = SubElement(bndbox, 'xmax')
+                    xmax.text = str(bounding_box[2])
+                    ymax = SubElement(bndbox, 'ymax')
+                    ymax.text = str(bounding_box[3])
 
         # all_ids = []
         # for each_object in self.boxlist:
