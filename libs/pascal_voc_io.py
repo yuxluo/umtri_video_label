@@ -247,8 +247,8 @@ class PascalVocReader:
     def getBehaviors(self):
         return self.behaviors
 
-    def addBehavior(self, behavior_name, behavior_id, starting_frame, ending_frame):
-        self.behaviors.append((behavior_name, behavior_id, starting_frame, ending_frame))
+    def addBehavior(self, behavior_name, behavior_id, starting_frame, ending_frame, shapes=None):
+        self.behaviors.append((behavior_name, behavior_id, starting_frame, ending_frame, shapes))
 
     def addShape(self, label, bndbox, difficult, parents, children, object_id):
 
@@ -282,7 +282,19 @@ class PascalVocReader:
             object_id = int(object_iter.find('behavior_id').text)
             start_frame = object_iter.find('start_frame').text
             end_frame = object_iter.find('end_frame').text
-            self.addBehavior(label, object_id, start_frame, end_frame)
+            shapes = object_iter.find('bounding_boxes')
+
+            bounding_boxes = []
+            for shape_tier in shapes.findall('bounding_box'):
+                box = {}
+                bndbox = shape_tier.find("bndbox")
+                box["bndbox"] = bndbox
+                frame = shape_tier.find("frame")
+                box["frame"] = frame.text
+                bounding_boxes.append(box)
+
+            self.addBehavior(label, object_id, start_frame, end_frame, bounding_boxes)
+            
         return True
 
     def parseXML(self):

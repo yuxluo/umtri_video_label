@@ -608,13 +608,15 @@ class MainWindow(QMainWindow, WindowMixin):
 
 
     def addPart(self):
+
+
         global CREATEING_HIERARCHY
         CREATEING_HIERARCHY=True
         # get the parent item 
         if not self.canvas.editing():
             return
         item = self.currentItem()
-        if not item:
+        if not item or item in self.itemsToShapes:
             return
         global PARENT_ITEM
         PARENT_ITEM = item
@@ -631,10 +633,16 @@ class MainWindow(QMainWindow, WindowMixin):
                 filepath[-1] = behavior.start_frame
                 currIndex = self.mImgList.index(ustr('/'.join(filepath)))
                 self.update_slider_value(currIndex)
+        else:
+            shape = self.itemsToShapes[selected_item]
+            filepath = self.filePath.split('/')
+            filepath[-1] = shape.filename
+            currIndex = self.mImgList.index(ustr('/'.join(filepath)))
+            self.update_slider_value(currIndex)
 
     def setStart(self):
         selected_item = self.labelList.currentItem()
-        if selected_item is not None:
+        if selected_item is not None and selected_item in self.itemsToBehaviors:
             selected_behavior = self.itemsToBehaviors[selected_item]
             filename = self.filePath.split('/')[-1]
             frame_num = filename.split('-')[-1].split('.')[0]
@@ -645,7 +653,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def setEnd(self):
         selected_item = self.labelList.currentItem()
-        if selected_item is not None:
+        if selected_item is not None and selected_item in self.itemsToBehaviors:
             selected_behavior = self.itemsToBehaviors[selected_item]
             filename = self.filePath.split('/')[-1]
             frame_num = filename.split('-')[-1].split('.')[0]
@@ -1100,12 +1108,11 @@ class MainWindow(QMainWindow, WindowMixin):
             return
         item = self.labelList.currentItem()
         # item = self.currentItem()
-        if not item:
+        if not item or item in self.itemsToShapes:
             return
         text = self.labelDialog.popUp(item.text(0))
         if text is not None:
             item.setText(0, text)
-
             item.setBackground(0, generateColorByText(text))
             item.setBackground(1, generateColorByText(text))
             item.setBackground(2, generateColorByText(text))
@@ -1275,7 +1282,22 @@ class MainWindow(QMainWindow, WindowMixin):
         self.itemsToBehaviors[item] = behavior
         self.behaviorsToItems[behavior] = item
         self.labelList.addTopLevelItem(item)
-        
+
+        if len(behavior.shapes) > 0:
+            for shape in behavior.shapes:
+                shape_item = HashableQListWidgetItem()
+                shape_item.setText(0, "frame:")
+                shape_item.setText(1, shape.label)
+                shape_item.setCheckState(0, Qt.Checked)
+                shape_item.setBackground(0, behavior.parent_color)
+                shape_item.setBackground(1, behavior.parent_color)
+                shape_item.setBackground(2, behavior.parent_color)
+                item.addChild(shape_item)
+
+                self.itemsToShapes[shape_item] = shape
+                self.shapesToItems[shape] = shape_item
+
+        item.setExpanded(True)
 
     def addLabel_old(self, shape):
         shape.paintLabel = self.displayLabelOption.isChecked()
@@ -1307,16 +1329,14 @@ class MainWindow(QMainWindow, WindowMixin):
 
         if shape in self.shapesToItems:
             item = self.shapesToItems[shape]
-            while item.childCount() != 0:
-                child = item.child(0)
-                self.remLabel(self.itemsToShapes[child])
-
             del self.shapesToItems[shape]
             del self.itemsToShapes[item]
 
         else:
             item = self.behaviorsToItems[shape]
-            print("delete bounding boxes")
+            while item.childCount() != 0:
+                child = item.child(0)
+                self.remLabel(self.itemsToShapes[child])
             del self.behaviorsToItems[shape]
             del self.itemsToBehaviors[item]
 
@@ -1345,14 +1365,39 @@ class MainWindow(QMainWindow, WindowMixin):
 
         return -1
 
+    def get_frame_num(self, filename):
+        return filename.split('-')[-1].split('.')[0]
 
     def loadLabels(self, behaviors):
         b = []
 
-        for behavior_name, behavior_id, starting_frame, ending_frame in behaviors:
+        for behavior_name, behavior_id, starting_frame, ending_frame, shapes in behaviors:
             behavior = self.canvas.new_behavior(behavior_name, GLOBAL_ID, generateColorByText(behavior_name))
             behavior.start_frame = starting_frame
             behavior.end_frame = ending_frame
+
+            for shape in  shapes:
+                filename = shape['frame']
+                reconstructed_shape = Shape(label=self.get_frame_num(filename))
+                reconstructed_shape.filename = filename
+                bndbox = shape["bndbox"]
+                xmin = int(float(bndbox.find('xmin').text))
+                ymin = int(float(bndbox.find('ymin').text))
+                xmax = int(float(bndbox.find('xmax').text))
+                ymax = int(float(bndbox.find('ymax').text))
+                points = [(xmin, ymin), (xmax, ymin), (xmax, ymax), (xmin, ymax)]
+
+                for x, y in points:
+
+                # Ensure the labels are within the bounds of the image. If not, fix them.
+                    x, y, snapped = self.canvas.snapPointToCanvas(x, y)
+                    # if snapped:
+                        # self.setDirty()
+
+                    reconstructed_shape.addPoint(QPointF(x, y))
+
+                behavior.shapes.append(reconstructed_shape)
+
             b.append(behavior)
             self.addLabel(behavior)
         
@@ -2078,7 +2123,16 @@ class MainWindow(QMainWindow, WindowMixin):
                 else:
                     return
 
-        self.remLabel(self.canvas.deleteSelected())
+        if self.labelList.currentItem() in self.itemsToShapes:
+            global PARENT_ITEM
+            PARENT_ITEM = self.labelList.currentItem().parent()
+            shape = self.itemsToShapes[self.labelList.currentItem()]
+            self.itemsToBehaviors[PARENT_ITEM].shapes.remove(shape)
+            self.canvas.selectedShape = None
+            self.canvas.update()
+            self.remLabel(shape)
+        else:
+            self.remLabel(self.canvas.deleteSelected())
         self.setDirty()
         if self.noShapes():
             for action in self.actions.onShapesPresent:
