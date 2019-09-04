@@ -25,7 +25,7 @@ by `ImageNet <http://www.image-net.org/>`__.  Besides, it also supports YOLO for
 <http://umtri.org/file/umtri_label_demo.mp4>`_
 
 `Quick Start Guide
-<http://umtri.org/file/v0.1.pdf>`_
+<http://umtri.org/file/video.pdf>`_
 
 ATTENTION
 ------------------
