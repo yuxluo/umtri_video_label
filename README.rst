@@ -18,6 +18,14 @@ The UMTRI VAT is written in Python and uses PyQt5 for its GUI. It allows users t
 Annotations are saved as XML files in PASCAL VOC format, the format used
 by `ImageNet <http://www.image-net.org/>`__.  Besides, it also supports YOLO format.
 
+.. image:: /demo/demo1.png
+    :align: center
+
+`Video Demo
+<http://umtri.org/file/umtri_label_demo.mp4>`_
+
+`Quick Start Guide
+<http://umtri.org/file/v0.1.pdf>`_
 
 ATTENTION
 ------------------
@@ -73,11 +81,11 @@ Usage
 1. Build and launch using the instructions above
 2. Enter your access code and server information. Ask the project instructor if you are not sure
 3. Click 'Retrieve'
-4. Click 'Create RectBox'
-5. Click and release left mouse to select a region to annotate the rect box
-6. Click 'Next' and repeat step 4 until reaching the end of the datase 
-7. Click 'Submit'
-8. Repeat step 3.
+4. Click 'Play'
+5. Create New Behavior
+6. Right click the behavior to give it a name, a start frame and a ending frame
+7. Add one or more bounding boxes to the behavior (or not)
+8. Click 'Submit'
 
 The annotation will be saved automatically when you click next or sumbit
 
@@ -88,9 +96,9 @@ Hotkeys
 ~~~~~~~
 
 +------------+--------------------------------------------+
-| Ctrl + u   | Load all of the images from a directory    |
+| ?         | Skip ahead ten frames                      |
 +------------+--------------------------------------------+
-| Ctrl + r   | Change the default annotation target dir   |
+| ?         | Rewind ten frames                          |
 +------------+--------------------------------------------+
 | Ctrl + s   | Save                                       |
 +------------+--------------------------------------------+
@@ -113,19 +121,6 @@ Hotkeys
 | ↑→↓←       | Keyboard arrows to move selected rect box  |
 +------------+--------------------------------------------+
 
-**Verify Image:**
-
-When pressing space, the user can flag the image as verified, a green background will appear.
-This is used when creating a dataset automatically, the user can then through all the pictures and flag them instead of annotate them.
-
-**Difficult:**
-
-The difficult field is set to 1 indicates that the object has been annotated as "difficult", for example, an object which is clearly visible but difficult to recognize without substantial use of context.
-According to your deep neural network implementation, you can include or exclude difficult objects during training.
-
-**Hierarchy:**
-
-Right click on the label and select 'add component' to add a child to the selected object. 
 
 
 License
@@ -144,6 +139,16 @@ Alpha 0.1
 • Draggable slider to fast forward and backward 
 • Sync slider with 'Play' and double click in fileList
 
+Alpha 0.2
+~~~~~~~
+• Bookmark function
+• Variable speed playback
+
+Alpha 0.3
+~~~~~~~
+• Create behavior
+• Add start, end and bounding boxes
+• Save, load & reconstruct
 
 Future Features
 ~~~~~~~
