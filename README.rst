@@ -22,7 +22,7 @@ by `ImageNet <http://www.image-net.org/>`__.  Besides, it also supports YOLO for
     :align: center
 
 `Video Demo
-<http://umtri.org/file/umtri_label_demo.mp4>`_
+</demo/video_demo.mp4>`_
 
 `Quick Start Guide
 <http://umtri.org/file/video.pdf>`_
